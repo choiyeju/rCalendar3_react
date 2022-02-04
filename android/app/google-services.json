@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "88262564393",
+    "project_id": "rcalendar3",
+    "storage_bucket": "rcalendar3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:88262564393:android:499016ed488ecf96601a38",
+        "android_client_info": {
+          "package_name": "com.rcalendar3"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "88262564393-bhqi5338u7rv7r6k4h3dn1vnbkjei10i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rcalendar3",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "88262564393-bn0nda8ful3423bj4b6unc914s5cj30d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuloUS31QvT13Wmz0HdmKA08Y4m3wTN5Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "88262564393-bn0nda8ful3423bj4b6unc914s5cj30d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

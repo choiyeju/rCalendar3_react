@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>React Native Web</title>
+    <!-- <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script> -->
+    <!-- <script src="http://code.jquery.com/jquery-latest.js"></script> -->
+    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> -->
+    <!-- <script src="https://apis.google.com/js/client.js?onload=checkAuth"></script> -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar-scheduler@5.6.0/main.min.css' rel='stylesheet' />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar-scheduler@5.6.0/main.min.js"></script>
+    <script src="https://apis.google.com/js/api.js" async defer type="text/javascript"></script>
+    <script src="https://apis.google.com/js/client.js"></script>
+
+  <script src='http://fullcalendar.io/js/fullcalendar-2.1.1/lib/moment.min.js'></script>
+  <script src='http://fullcalendar.io/js/fullcalendar-2.1.1/lib/jquery.min.js'></script>
+  <script src="http://fullcalendar.io/js/fullcalendar-2.1.1/lib/jquery-ui.custom.min.js"></script>
+  <!-- <script src='http://fullcalendar.io/js/fullcalendar-2.1.1/fullcalendar.min.js'></script>
+  <link href='http://fullcalendar.io/js/fullcalendar-2.1.1/fullcalendar.min.css'rel='stylesheet' /> -->
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
+  <script type="text/javascript">
+    var new_events = []
+    var calendar = null
+    // document.addEventListener('DOMContentLoaded', function() {
+    //   var calendarEl = document.getElementById('calendar');
+    //   var calendar = new FullCalendar.Calendar(calendarEl, {
+    //     initialView: 'dayGridMonth'
+    //   });
+    //   console.log(new FullCalendar.Calendar())
+    //   calendar.render();
+    // });
+    // var calendar = null;
+    //   document.addEventListener('DOMContentLoaded', function() {
+    //     var calendarEl = document.getElementById('calendar');
+    //     var calendar = new FullCalendar.Calendar(calendarEl, {
+    //       headerToolbar: {
+    //         left: 'title',
+    //         right: 'prev,next today',
+    //       }
+    //       , editable : true
+    //       , eventLimit : true
+    //       , events: [
+    //         {
+    //             title : 'libft 과제이해',
+    //             start: '2022-01-28T23:00:00+09:00',
+    //             backgroundColor: "rgb(0, 185, 186)",
+    //             textColor : "#000000"
+    //         },
+    //         {
+    //             title : 'libft 코딩',
+    //             start: '2022-01-26',
+    //             end: '2022-01-30',
+    //             backgroundColor: "rgb(0, 185, 186)",
+    //             textColor : "#000000"
+    //         },
+    //         {
+    //             title : 'libft 평가',
+    //             start: '2022-01-29',
+    //             backgroundColor: "rgb(0, 185, 186)",
+    //             textColor : "#000000"
+    //         },
+    //       ]
+    //     });
+    //   calendar.render();
+    // });
+    // document.addEventListener('DOMContentLoaded', function() {
+    //   // 드래그 박스 취득
+    //   var containerEl = $('#external-events-list')[0];
+    //   // 설정하기
+    //   calendar = new FullCalendar.Draggable(containerEl, {
+    //   itemSelector: '.fc-event',
+    //   eventData: function(eventEl) {
+    //   return {
+    //   title: eventEl.innerText.trim()
+    //   }
+    //   }
+    //   });
+    //   // 드래그 아이템 추가하기
+    //   // for(var i=1; i<=5;i++) {
+    //   // var $div = $("<div class='fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event'></div>");
+    //   // $event = $("<div class='fc-event-main'></div>").text("Event "+i);
+    //   // $('#external-events-list').append($div.append($event));
+    //   // }
+    //   // calendar element 취득
+    //   var calendarEl = $('#calendar1')[0];
+    //   // full-calendar 생성하기
+    //   calendar = new FullCalendar.Calendar(calendarEl, {
+    //   // plugins: [ 'interaction', 'dayGrid', 'timeGrid' ],
+    //   // 해더에 표시할 툴바
+    //   headerToolbar: {
+    //   left: 'today prev,next',
+    //   center: 'title',
+    //   right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+    //   },
+    //   locale: 'ko', // 한국어 설정
+    //   editable: true, // 수정 가능
+    //   // eventLimit: true,
+    //   dayMaxEvents: 2,
+    //   dayMaxEventRows: 2,
+    //   // height: 'parent',
+    //   contentHeight: 'auto',
+    //   droppable: true, // 드래그 가능
+    //   drop: function(arg) {
+    //   arg.draggedEl.parentNode.removeChild(arg.draggedEl);
+    //   },
+    //   events: new_events,
+    //   dateClick:function(event) {
+    //     //title:"", start:event.dateStr, end:""
+    //     onDisplay()
+    //     _start = event.dateStr
+    //     _end = event.dateStr
+    //     $('#change2').val(event.dateStr)
+    //     $('#change3').val(event.dateStr)
+    //   },
+    //   eventClick:function(event) {
+    //     console.log(event.event)
+    //     console.log(event.event.startStr)
+    //     // console.log(event.event._instance.range.start)
+
+    //     const element = document.getElementById('eventsCenter')
+    //     if (event.event.endStr === "")
+    //       element.innerHTML = Display(event.event._def.title, event.event.startStr, event.event.startStr)
+    //     else
+    //       element.innerHTML = Display(event.event._def.title, event.event.startStr, event.event.endStr)
+    //     onDisplayM()
+    //     _title = event.event._def.title
+    //     _start = event.event.startStr
+    //     _end = event.event.endStr
+    //     $('#change4').val(event.event._def.title)
+    //     $('#change5').val(event.event.startStr)
+    //     if (event.event.endStr === "")
+    //       $('#change6').val(event.event.startStr)
+    //     else
+    //       $('#change6').val(event.event.endStr)
+    //   },
+    //   });
+    //   // 캘린더 랜더링
+    //   calendar.render();
+    //   console.log(calendar);
+    //   //currentData - calendarApi - currentData - eventStore - 
+    // });
+  </script>
+  <style>
+    div.calendar1{
+      position: relative;
+      z-index: 100;
+    }
+    div.insertEvents{
+      position: absolute;
+    }
+  </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <!-- <div id="calendar"></div> -->
+    <!-- <div id='wrap'> -->
+      <!-- 드래그 박스 -->
+      <!-- <div id='external-events'>
+        <div id='external-events-list'></div>
+      </div> -->
+      <!-- calendar 태그 -->
+      <!-- <div id='calendar-wrap'>
+        <div id='calendar1'></div>
+      </div>
+    </div> -->
+  </body>
+</html>

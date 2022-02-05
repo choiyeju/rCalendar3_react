@@ -16,6 +16,8 @@ var _title = ''
 var _start = ''
 var _end = ''
 var _eventId = ''
+var _tstart = ''
+var _tend = ''
 
 function App() {
   // console.table(getMonth(3))
@@ -58,35 +60,75 @@ function App() {
     events: change_events,
     dateClick:function(event) {
       onDisplay()
-      change2('',event.dateStr)
-      change3('',event.dateStr)
+      change2('', event.dateStr)
+      change3('', event.dateStr)
+      change5('', '')
+      change6('', '')
       $('#change').val('')
       $('#change2').val(event.dateStr)
       $('#change3').val(event.dateStr)
+      $('#change4').val(_tstart)
+      $('#change5').val(_tend)
     },
     eventClick:function(event) {
+      var mainStart = event.event.startStr
+      var mainEnd = event.event.endStr
+      console.log(mainStart)
+      var cstart = ''
+      var cend = ''
+      var tstart = ''
+      var tend = ''
       change('', event.event._def.title)
-      change2('',event.event.startStr)
-      change3('',event.event.endStr)
+      change2('', mainStart)
+      change3('', mainEnd)
       change4(event.event._def.publicId)
+      change5('', '')
+      change6('', '')
       var yesterday = event.event.endStr
-      if (event.event.startStr !== event.event.endStr && event.event.endStr.length < 11)
+      if (mainStart !== event.event.endStr && event.event.endStr.length < 11)
         yesterday = makeYesterday(event.event.endStr)
+      else{
+        cstart = mainStart.substring(0, 10)
+        cend = mainEnd.substring(0, 10)
+        tstart = mainStart.substring(11, 16)
+        tend = mainEnd.substring(11, 16)
+        change2('', cstart)
+        change3('', cend)
+        change5('', tstart)
+        change6('', tend)
+      }
+      // console.log(cstart)
+      // console.log(tstart)
+      // console.log(cend)
+      // console.log(tend)
       const element = document.getElementById('eventsCenter')
       if (event.event.endStr === "")
-        element.innerHTML = Display(event.event._def.title, event.event.startStr, event.event.startStr)
+        element.innerHTML = Display(event.event._def.title, mainStart, mainStart, '', '')
+      else if (event.event.endStr.length < 11)
+        element.innerHTML = Display(event.event._def.title, mainStart, yesterday, '', '')
       else
-        element.innerHTML = Display(event.event._def.title, event.event.startStr, yesterday)
+        element.innerHTML = Display(event.event._def.title, cstart, cend, tstart, tend)
       onDisplayM()
       //parseInt(), 0~3, 5~6, 8~9
-      $('#change4').val(event.event._def.title)
-      $('#change5').val(event.event.startStr)
-      if (event.event.endStr === "")
-        $('#change6').val(event.event.startStr)
-      else if (event.event.startStr !== event.event.endStr && event.event.endStr.length < 11)
-        $('#change6').val(yesterday)
-      else
-        $('#change6').val(event.event.endStr)
+      $('#change6').val(event.event._def.title)
+      $('#change9').val('')
+      $('#change10').val('')
+      if (mainStart.length < 11) {
+        $('#change7').val(mainStart)
+      }
+      else {
+        $('#change7').val(cstart)
+        $('#change9').val(tstart)
+        console.log(mainStart)
+      }
+      if (mainEnd === "")
+        $('#change8').val(mainStart)
+      else if (mainStart !== mainEnd && mainEnd.length < 11)
+        $('#change8').val(yesterday)
+      else {
+        $('#change8').val(cend)
+        $('#change10').val(tend)
+      }
     },
     });
     calendar.render();
@@ -156,6 +198,18 @@ function App() {
   }
   function change4(eventId) {
     _eventId = eventId
+  }
+  function change5(e, tstart) {
+    if ('' === e)
+      _tstart = tstart
+    else
+      _tstart = e.target.value
+  }
+  function change6(e, tend) {
+    if ('' === e)
+      _tend = tend
+    else
+      _tend = e.target.value
   }
 
   function makeTomorrow(end) {
@@ -277,9 +331,13 @@ function App() {
     return false;
   }
 
-  function InsertEventsF(title, start, end) {
+  function InsertEventsF(title, start, end, tstart, tend) {
     var event = null;
-    if (start.length > 11){
+    if (tstart != ''){
+      start = start + 'T' + tstart + ':00+09:00'
+      end = end + 'T' + tend + ':00+09:00'
+      console.log(start)
+      console.log(end)
       event = {
         'summary': title,
         'location': '',
@@ -344,9 +402,11 @@ function App() {
     // changeCalendar(makeNewEvents())
     $('#insertEvents').hide()
   }
-  function updateEventsF(title, start, end, eventId) {
+  function updateEventsF(title, start, end, eventId, tstart, tend) {
     var event = null;
-    if (start.length > 11){
+    if (tstart != ''){
+      start = start + 'T' + tstart + '+09:00'
+      end = end + 'T' + tend + '+09:00'
       event = {
         'summary': title,
         'location': '',
@@ -443,14 +503,14 @@ function App() {
   }
 
   function insertDisplay() {
-    if ( _end.length < 11)
-      InsertEventsF(_title, _start, makeTomorrow(_end))
+    if ( _tstart == '')
+      InsertEventsF(_title, _start, makeTomorrow(_end), _tstart, _tend)
     else 
-      InsertEventsF(_title, _start, _end)
+      InsertEventsF(_title, _start, _end, _tstart, _tend)
     $('#insertEvents').hide()
   }
   function updateDisplay() {
-    updateEventsF(_title, _start, _end, _eventId)
+    updateEventsF(_title, _start, _end, _eventId, _tstart, _tend)
     $('#insertEvents').hide()
   }
   function deleteDisplay() {
@@ -458,9 +518,12 @@ function App() {
     $('#insertEvents').hide()
   }
 
-  function Display(title, start, end) {
+  function Display(title, start, end, tstart, tend) {
     // return '<p>' + start + '</p><p>' + end + '</p>'
-    return '<p>' + title + '</p><p>' + start + '</p><p>' + end + '</p>'
+    if (tstart == '')
+      return '<p>' + title + '</p><p>' + start + '</p><p>' + end + '</p>'
+    else
+      return '<p>' + title + '</p><p>' + start + '</p><p>' + end + '</p>' + '</p><p>' + tstart + '</p><p>' + tend + '</p>'
   }
 
   const insertStyle = {
@@ -483,6 +546,8 @@ function App() {
             <p><input id="change" name="text" placeholder='(제목 및 시간 추가)' onChange={change} /></p>
             <p><input id="change2" name="text" onChange={change2} /></p>
             <p><input id="change3" name="text" onChange={change3} /></p>
+            <p><input id="change4" name="text" onChange={change5} /></p>
+            <p><input id="change5" name="text" onChange={change6} /></p>
           </div>
 
           <div id='mainEvents' style={insertStyle}>
@@ -495,9 +560,11 @@ function App() {
             <button onClick={offDisplayU}>x</button>
             <button onClick={updateDisplay}>o</button>
             <button onClick={deleteDisplay}>delete</button>
-            <p><input id="change4" name="text" onChange={change} /></p>
-            <p><input id="change5" name="text" onChange={change2} /></p>
-            <p><input id="change6" name="text" onChange={change3} /></p>
+            <p><input id="change6" name="text" onChange={change} /></p>
+            <p><input id="change7" name="text" onChange={change2} /></p>
+            <p><input id="change8" name="text" onChange={change3} /></p>
+            <p><input id="change9" name="text" onChange={change5} /></p>
+            <p><input id="change10" name="text" onChange={change6} /></p>
           </div>
           <div id='wrap'>
             <div id='external-events'>

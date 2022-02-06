@@ -73,7 +73,6 @@ function App() {
     eventClick:function(event) {
       var mainStart = event.event.startStr
       var mainEnd = event.event.endStr
-      console.log(mainStart)
       var cstart = ''
       var cend = ''
       var tstart = ''
@@ -97,10 +96,6 @@ function App() {
         change5('', tstart)
         change6('', tend)
       }
-      // console.log(cstart)
-      // console.log(tstart)
-      // console.log(cend)
-      // console.log(tend)
       const element = document.getElementById('eventsCenter')
       if (event.event.endStr === "")
         element.innerHTML = Display(event.event._def.title, mainStart, mainStart, '', '')
@@ -132,42 +127,6 @@ function App() {
     },
     });
     calendar.render();
-  }
-
-  function makeNewEvents() {
-    var request = gapi.client.calendar.events.list({
-      'calendarId': 'primary', /* Can be 'primary' or a given calendarid */
-      // 'timeMin': (new Date(2022/1/28)).toISOString(),
-      'showDeleted': false,
-      'singleEvents': true,
-      // 'maxResults': 100,
-      'orderBy': 'startTime'
-    });
-    
-    request.execute(function(resp) {
-      var events = resp.items;
-      if (events.length > 0) {
-        for (i = 0; i < events.length; i++) {
-          var event = events[i]
-          var start = event.start.dateTime
-          var end = event.end.dateTime
-          var id = event.id
-          
-          if (!start) {
-            start = event.start.date
-            end = event.end.date
-          }
-          new_events[i] = {
-            title : event.summary,
-            start : start,
-            end : end,
-            id : id
-          }
-        }
-      }
-    });
-    console.log(new_events)
-    return new_events
   }
 
   const LoginOut = () => {
@@ -259,7 +218,7 @@ function App() {
       // 'maxResults': 100,
       'orderBy': 'startTime'
     });
-    
+    new_events = []
     request.execute(function(resp) {
       var events = resp.items;
       if (events.length > 0) {
@@ -281,7 +240,6 @@ function App() {
           }
         }
       }
-      // calendar.setOption('events', new_events)
       (function(){
         $(function(){
           changeCalendar(new_events)
@@ -336,8 +294,6 @@ function App() {
     if (tstart != ''){
       start = start + 'T' + tstart + ':00+09:00'
       end = end + 'T' + tend + ':00+09:00'
-      console.log(start)
-      console.log(end)
       event = {
         'summary': title,
         'location': '',
@@ -384,29 +340,20 @@ function App() {
         }
       }
     }
-
-    // new_events[new_events.length] = {
-    //   title: title,
-    //   start: start,
-    //   end: end,
-    // }
     var request = gapi.client.calendar.events.insert({
         'calendarId': 'primary',
         'resource': event,
     })
     request.execute(function(event) {
     })
-
-    // listUpcomingEvents()
-    // console.log(makeNewEvents())
-    // changeCalendar(makeNewEvents())
+    loadCalendarApi()
     $('#insertEvents').hide()
   }
   function updateEventsF(title, start, end, eventId, tstart, tend) {
     var event = null;
     if (tstart != ''){
-      start = start + 'T' + tstart + '+09:00'
-      end = end + 'T' + tend + '+09:00'
+      start = start + 'T' + tstart + ':00+09:00'
+      end = end + 'T' + tend + ':00+09:00'
       event = {
         'summary': title,
         'location': '',
@@ -453,19 +400,17 @@ function App() {
         }
       }
     }
-
-    var event2 = gapi.client.calendar.events.get({"calendarId": 'primary', "eventId": eventId});
-    event2.location = "New Address";
-    var request = gapi.client.calendar.events.patch({
+    console.log(event)
+    // var event2 = gapi.client.calendar.events.get({"calendarId": 'primary', "eventId": eventId});
+    // event2.location = "New Address";
+    var request = gapi.client.calendar.events.update({
       'calendarId': 'primary',
       'eventId': eventId,
       'resource': event
     });
     request.execute(function(event) {
     })
-
-    // listUpcomingEvents()
-    // changeCalendar(makeNewEvents())
+    loadCalendarApi()
     $('#updateEvents').hide()
   }
   function deleteEventsF(eventId) {
@@ -475,8 +420,7 @@ function App() {
     });
     request.execute(function(event) {
     })
-    // listUpcomingEvents()
-    // changeCalendar(makeNewEvents())
+    loadCalendarApi()
     $('#updateEvents').hide()
   }
 
@@ -507,15 +451,15 @@ function App() {
       InsertEventsF(_title, _start, makeTomorrow(_end), _tstart, _tend)
     else 
       InsertEventsF(_title, _start, _end, _tstart, _tend)
-    $('#insertEvents').hide()
   }
   function updateDisplay() {
-    updateEventsF(_title, _start, _end, _eventId, _tstart, _tend)
-    $('#insertEvents').hide()
+    if ( _tstart == '')
+      updateEventsF(_title, _start, makeTomorrow(_end), _eventId, _tstart, _tend)
+    else 
+      updateEventsF(_title, _start, _end, _eventId, _tstart, _tend)
   }
   function deleteDisplay() {
     deleteEventsF(_eventId)
-    $('#insertEvents').hide()
   }
 
   function Display(title, start, end, tstart, tend) {

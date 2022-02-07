@@ -59,6 +59,8 @@ function App() {
     },
     events: change_events,
     dateClick:function(event) {
+      var test = document.getElementById('time_check_insert');
+      console.log($(test).prop("checked"))
       onDisplay()
       change2('', event.dateStr)
       change3('', event.dateStr)
@@ -69,6 +71,8 @@ function App() {
       $('#change3').val(event.dateStr)
       $('#change4').val(_tstart)
       $('#change5').val(_tend)
+      
+      document.getElementById('time_check_insert').checked = true
     },
     eventClick:function(event) {
       var mainStart = event.event.startStr
@@ -114,8 +118,8 @@ function App() {
       else {
         $('#change7').val(cstart)
         $('#change9').val(tstart)
-        console.log(mainStart)
       }
+      
       if (mainEnd === "")
         $('#change8').val(mainStart)
       else if (mainStart !== mainEnd && mainEnd.length < 11)
@@ -123,6 +127,16 @@ function App() {
       else {
         $('#change8').val(cend)
         $('#change10').val(tend)
+      }
+
+      if (tstart != '') {
+        document.getElementById('time_check_update').checked = true
+        $('#change9').show()
+        $('#change10').show()
+      } else {
+        document.getElementById('time_check_update').checked = false
+        $('#change9').hide()
+        $('#change10').hide()
       }
     },
     });
@@ -175,12 +189,13 @@ function App() {
     const year = parseInt(end[0])*1000 + parseInt(end[1])*100 + parseInt(end[2])*10 + parseInt(end[3])
     const month = parseInt(end[5])*10 + parseInt(end[6])
     const day = parseInt(end[8])*10 + parseInt(end[9])
-    var t = new Date(year, month, day+1)
-    var tomorrow = '';
-    if (t.getMonth() < 10)
-      tomorrow = t.getFullYear() + "-0" + t.getMonth()
+    // toISOString()
+    var t = new Date(year, month-1, day+1)
+    var tomorrow = ''
+    if (t.getMonth()+1 < 10)
+      tomorrow = t.getFullYear() + "-0" + (t.getMonth()+1)
     else
-      tomorrow = t.getFullYear() + "-" + t.getMonth()
+      tomorrow = t.getFullYear() + "-" + (t.getMonth()+1)
     if (t.getDate() < 10)
       tomorrow += "-0" + t.getDate()
     else
@@ -191,12 +206,12 @@ function App() {
     const year = parseInt(end[0])*1000 + parseInt(end[1])*100 + parseInt(end[2])*10 + parseInt(end[3])
     const month = parseInt(end[5])*10 + parseInt(end[6])
     const day = parseInt(end[8])*10 + parseInt(end[9])
-    var y = new Date(year, month, day-1)
+    var y = new Date(year, month-1, day-1)
     var yesterday = '';
-    if (y.getMonth() < 10)
-      yesterday = y.getFullYear() + "-0" + y.getMonth()
+    if (y.getMonth()+1 < 10)
+      yesterday = y.getFullYear() + "-0" + (y.getMonth()+1)
     else
-      yesterday = y.getFullYear() + "-" + y.getMonth()
+      yesterday = y.getFullYear() + "-" + (y.getMonth()+1)
     if (y.getDate() < 10)
       yesterday += "-0" + y.getDate()
     else
@@ -291,7 +306,7 @@ function App() {
 
   function InsertEventsF(title, start, end, tstart, tend) {
     var event = null;
-    if (tstart != ''){
+    if (tstart != '' && document.getElementById('time_check_update').checked === true) {
       start = start + 'T' + tstart + ':00+09:00'
       end = end + 'T' + tend + ':00+09:00'
       event = {
@@ -351,7 +366,7 @@ function App() {
   }
   function updateEventsF(title, start, end, eventId, tstart, tend) {
     var event = null;
-    if (tstart != ''){
+    if (tstart != '' && document.getElementById('time_check_update').checked === true){
       start = start + 'T' + tstart + ':00+09:00'
       end = end + 'T' + tend + ':00+09:00'
       event = {
@@ -400,7 +415,6 @@ function App() {
         }
       }
     }
-    console.log(event)
     // var event2 = gapi.client.calendar.events.get({"calendarId": 'primary', "eventId": eventId});
     // event2.location = "New Address";
     var request = gapi.client.calendar.events.update({
@@ -463,11 +477,31 @@ function App() {
   }
 
   function Display(title, start, end, tstart, tend) {
-    // return '<p>' + start + '</p><p>' + end + '</p>'
     if (tstart == '')
       return '<p>' + title + '</p><p>' + start + '</p><p>' + end + '</p>'
     else
-      return '<p>' + title + '</p><p>' + start + '</p><p>' + end + '</p>' + '</p><p>' + tstart + '</p><p>' + tend + '</p>'
+      return '<p>' + title + '</p><p>' + start + " " + tstart + '</p><p>' + end + " " + tend + '</p>'
+  }
+
+  function time_check() {
+    var test = document.getElementById('time_check_update').checked
+    if (test === false) {
+      $('#change9').hide()
+      $('#change10').hide()
+    } else {
+      $('#change9').show()
+      $('#change10').show()
+    }
+  }
+  function time_check_insert() {
+    var test = document.getElementById('time_check_insert').checked
+    if (test === false) {
+      $('#change4').hide()
+      $('#change5').hide()
+    } else {
+      $('#change4').show()
+      $('#change5').show()
+    }
   }
 
   const insertStyle = {
@@ -488,10 +522,9 @@ function App() {
             <button onClick={offDisplay}>x</button>
             <button onClick={insertDisplay}>o</button>
             <p><input id="change" name="text" placeholder='(제목 및 시간 추가)' onChange={change} /></p>
-            <p><input id="change2" name="text" onChange={change2} /></p>
-            <p><input id="change3" name="text" onChange={change3} /></p>
-            <p><input id="change4" name="text" onChange={change5} /></p>
-            <p><input id="change5" name="text" onChange={change6} /></p>
+            <p><input id="change2" name="text" onChange={change2} /><input id="change4" name="text" onChange={change5} /></p>
+            <p><input id="change3" name="text" onChange={change3} /><input id="change5" name="text" onChange={change6} /></p>
+            <p><input id="time_check_insert" type="checkbox" onChange={time_check_insert} /></p>
           </div>
 
           <div id='mainEvents' style={insertStyle}>
@@ -505,10 +538,9 @@ function App() {
             <button onClick={updateDisplay}>o</button>
             <button onClick={deleteDisplay}>delete</button>
             <p><input id="change6" name="text" onChange={change} /></p>
-            <p><input id="change7" name="text" onChange={change2} /></p>
-            <p><input id="change8" name="text" onChange={change3} /></p>
-            <p><input id="change9" name="text" onChange={change5} /></p>
-            <p><input id="change10" name="text" onChange={change6} /></p>
+            <p><input id="change7" name="text" onChange={change2} /><input id="change9" name="text" onChange={change5} /></p>
+            <p><input id="change8" name="text" onChange={change3} /><input id="change10" name="text" onChange={change6} /></p>
+            <p><input id="time_check_update" type="checkbox" onChange={time_check} /></p>
           </div>
           <div id='wrap'>
             <div id='external-events'>

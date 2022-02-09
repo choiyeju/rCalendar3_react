@@ -59,13 +59,13 @@ function App() {
     },
     events: change_events,
     dateClick:function(event) {
-      var test = document.getElementById('time_check_insert');
-      console.log($(test).prop("checked"))
       onDisplay()
+      change('', '')
       change2('', event.dateStr)
       change3('', event.dateStr)
       change5('', '')
       change6('', '')
+
       $('#change').val('')
       $('#change2').val(event.dateStr)
       $('#change3').val(event.dateStr)
@@ -87,9 +87,10 @@ function App() {
       change4(event.event._def.publicId)
       change5('', '')
       change6('', '')
-      var yesterday = event.event.endStr
-      if (mainStart !== event.event.endStr && event.event.endStr.length < 11)
-        yesterday = makeYesterday(event.event.endStr)
+
+      var yesterday = mainEnd
+      if (mainStart !== mainEnd && mainEnd.length < 11)
+        yesterday = makeYesterday(mainEnd)
       else{
         cstart = mainStart.substring(0, 10)
         cend = mainEnd.substring(0, 10)
@@ -100,14 +101,17 @@ function App() {
         change5('', tstart)
         change6('', tend)
       }
+      // $("#change7").datepicker();
+      // $("#change8").datepicker();
       const element = document.getElementById('eventsCenter')
-      if (event.event.endStr === "")
+      if (mainEnd === "")
         element.innerHTML = Display(event.event._def.title, mainStart, mainStart, '', '')
-      else if (event.event.endStr.length < 11)
+      else if (mainEnd.length < 11)
         element.innerHTML = Display(event.event._def.title, mainStart, yesterday, '', '')
       else
         element.innerHTML = Display(event.event._def.title, cstart, cend, tstart, tend)
       onDisplayM()
+
       //parseInt(), 0~3, 5~6, 8~9
       $('#change6').val(event.event._def.title)
       $('#change9').val('')
@@ -140,6 +144,7 @@ function App() {
       }
     },
     });
+
     calendar.render();
   }
 
@@ -305,6 +310,18 @@ function App() {
   }
 
   function InsertEventsF(title, start, end, tstart, tend) {
+    if (start === end){
+      if (tstart[0]+tstart[1] > tend[0]+tend[1]){
+        alert('시간 설정이 잘못되었습니다.')
+        return
+      }
+      else if (tstart[0]+tstart[1] === tend[0]+tend[1])
+        if (tstart[3]+tstart[4] > tend[3]+tend[4]){
+          alert('시간 설정이 잘못되었습니다.')
+          return
+        }
+    }
+
     var event = null;
     if (tstart != '' && document.getElementById('time_check_update').checked === true) {
       start = start + 'T' + tstart + ':00+09:00'
@@ -365,6 +382,18 @@ function App() {
     $('#insertEvents').hide()
   }
   function updateEventsF(title, start, end, eventId, tstart, tend) {
+    if (start === end){
+      if (tstart[0]+tstart[1] > tend[0]+tend[1]){
+        alert('시간 설정이 잘못되었습니다.')
+        return
+      }
+      else if (tstart[0]+tstart[1] === tend[0]+tend[1])
+        if (tstart[3]+tstart[4] > tend[3]+tend[4]){
+          alert('시간 설정이 잘못되었습니다.')
+          return
+        }
+    }
+
     var event = null;
     if (tstart != '' && document.getElementById('time_check_update').checked === true){
       start = start + 'T' + tstart + ':00+09:00'
@@ -415,8 +444,7 @@ function App() {
         }
       }
     }
-    // var event2 = gapi.client.calendar.events.get({"calendarId": 'primary', "eventId": eventId});
-    // event2.location = "New Address";
+
     var request = gapi.client.calendar.events.update({
       'calendarId': 'primary',
       'eventId': eventId,
@@ -522,8 +550,8 @@ function App() {
             <button onClick={offDisplay}>x</button>
             <button onClick={insertDisplay}>o</button>
             <p><input id="change" name="text" placeholder='(제목 및 시간 추가)' onChange={change} /></p>
-            <p><input id="change2" name="text" onChange={change2} /><input id="change4" name="text" onChange={change5} /></p>
-            <p><input id="change3" name="text" onChange={change3} /><input id="change5" name="text" onChange={change6} /></p>
+            <p><input type="date" id="change2" name="text" onChange={change2} /><input type="time" id="change4" name="text" onChange={change5} /></p>
+            <p><input type="date" id="change3" name="text" onChange={change3} /><input type="time" id="change5" name="text" onChange={change6} /></p>
             <p><input id="time_check_insert" type="checkbox" onChange={time_check_insert} /></p>
           </div>
 
@@ -538,10 +566,11 @@ function App() {
             <button onClick={updateDisplay}>o</button>
             <button onClick={deleteDisplay}>delete</button>
             <p><input id="change6" name="text" onChange={change} /></p>
-            <p><input id="change7" name="text" onChange={change2} /><input id="change9" name="text" onChange={change5} /></p>
-            <p><input id="change8" name="text" onChange={change3} /><input id="change10" name="text" onChange={change6} /></p>
+            <p><input type="date" id="change7" name="text" onChange={change2} /><input type="time" id="change9" name="text" onChange={change5} /></p>
+            <p><input type="date" id="change8" name="text" onChange={change3} /><input type="time" id="change10" name="text" onChange={change6} /></p>
             <p><input id="time_check_update" type="checkbox" onChange={time_check} /></p>
           </div>
+
           <div id='wrap'>
             <div id='external-events'>
               <div id='external-events-list'></div>

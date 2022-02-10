@@ -3,7 +3,7 @@ import { getMonth } from './src_react/util';
 import CalendarHeader from './src_react/components/CalendarHeader';
 import Sidebar from './src_react/components/Sidebar';
 import Month from './src_react/components/Month';
-import axios from 'axios';
+// import axios from 'axios';
 // import { parse } from '@babel/core';
 // import FullCalendar from "@fullcalendar/react";
 // import dayGridPlugin from "@fullcalendar/daygrid";
@@ -12,12 +12,47 @@ import axios from 'axios';
 //import ApiCalendar from 'react-google-calendar-api';
 //import { Button, View } from 'react-native';
 
+// const axios = require("axios");
+// const cheerio = require("cheerio");
+// const getHtml = async () => {
+//   try {
+//     return await axios.get("https://everytime.kr/timetable");
+//   } catch (error) {
+//     console.error(error);
+//   }
+// };
+// console.log(getHtml)
+
+// getHtml()
+//   .then(html => {
+//     let ulList = [];
+//     const $ = cheerio.load(html.data);
+//     const $bodyList = $("subject").children("td")
+//     $bodyList.each(function(i, elem) {
+//       ulList[i] = {
+//           title: $(this).find('time').text(),
+//           // image_url: $(this).find('name').attr('src'),
+//           name: $(this).find('name'),
+//           professor: $(this).find('professor'),
+//           place: $(this).find('place'),
+//       };
+//     });
+
+//     const data = ulList.filter(n => n.time);
+//     console.log(data)
+//     return data;
+//   })
+//   .then(res => {
+// 	console.log(res)
+//   });
+
 var _title = ''
 var _start = ''
 var _end = ''
 var _eventId = ''
 var _tstart = ''
 var _tend = ''
+var _repeat = ''
 
 function App() {
   // console.table(getMonth(3))
@@ -65,6 +100,7 @@ function App() {
       change3('', event.dateStr)
       change5('', '')
       change6('', '')
+      repeat_change('', '')
 
       $('#change').val('')
       $('#change2').val(event.dateStr)
@@ -73,8 +109,10 @@ function App() {
       $('#change5').val(_tend)
       
       document.getElementById('time_check_insert').checked = true
+      document.getElementById('time_repeat').checked = true
     },
     eventClick:function(event) {
+      console.log(event)
       var mainStart = event.event.startStr
       var mainEnd = event.event.endStr
       var cstart = ''
@@ -87,6 +125,7 @@ function App() {
       change4(event.event._def.publicId)
       change5('', '')
       change6('', '')
+      repeat_change('', '')
 
       var yesterday = mainEnd
       if (mainStart !== mainEnd && mainEnd.length < 11)
@@ -100,9 +139,9 @@ function App() {
         change3('', cend)
         change5('', tstart)
         change6('', tend)
+        repeat_change('', '매주') //매일, 매주, 매월, 매년
       }
-      // $("#change7").datepicker();
-      // $("#change8").datepicker();
+
       const element = document.getElementById('eventsCenter')
       if (mainEnd === "")
         element.innerHTML = Display(event.event._def.title, mainStart, mainStart, '', '')
@@ -141,6 +180,14 @@ function App() {
         document.getElementById('time_check_update').checked = false
         $('#change9').hide()
         $('#change10').hide()
+      }
+
+      if (event.event._def.extendedProps.recurring != undefined) {
+        document.getElementById('time_repeat2').checked = true
+        $('#repeat2').show()
+      } else {
+        document.getElementById('time_repeat2').checked = false
+        $('#repeat2').hide()
       }
     },
     });
@@ -188,6 +235,12 @@ function App() {
       _tend = tend
     else
       _tend = e.target.value
+  }
+  function repeat_change(e, repeat) {
+    if ('' === e)
+      _repeat = repeat
+    else
+      _repeat = e.target.value
   }
 
   function makeTomorrow(end) {
@@ -256,7 +309,8 @@ function App() {
             title : event.summary,
             start : start,
             end : end,
-            id : id
+            id : id,
+            recurring: event.recurringEventId,
           }
         }
       }
@@ -382,6 +436,11 @@ function App() {
     $('#insertEvents').hide()
   }
   function updateEventsF(title, start, end, eventId, tstart, tend) {
+    var test = document.getElementById('time_repeat2').checked
+    if (test === true) {
+      alert('이 일정 및 향후 일정, 모든 일정')
+    }
+
     if (start === end){
       if (tstart[0]+tstart[1] > tend[0]+tend[1]){
         alert('시간 설정이 잘못되었습니다.')
@@ -445,15 +504,15 @@ function App() {
       }
     }
 
-    var request = gapi.client.calendar.events.update({
-      'calendarId': 'primary',
-      'eventId': eventId,
-      'resource': event
-    });
-    request.execute(function(event) {
-    })
-    loadCalendarApi()
-    $('#updateEvents').hide()
+    // var request = gapi.client.calendar.events.update({
+    //   'calendarId': 'primary',
+    //   'eventId': eventId,
+    //   'resource': event
+    // });
+    // request.execute(function(event) {
+    // })
+    // loadCalendarApi()
+    // $('#updateEvents').hide()
   }
   function deleteEventsF(eventId) {
     var request = gapi.client.calendar.events.delete({
@@ -532,6 +591,23 @@ function App() {
     }
   }
 
+  function time_repeat() {
+    var test = document.getElementById('time_repeat').checked
+    if (test === false) 
+      $('#repeat').hide()
+    else 
+      $('#repeat').show()
+  }
+  function time_repeat2() {
+    var test = document.getElementById('time_repeat2').checked
+    if (test === false) 
+      $('#repeat2').hide()
+    else 
+      $('#repeat2').show()
+  }
+
+  function list() {}
+
   const insertStyle = {
     padding: 10,
     display: 'none',
@@ -541,6 +617,8 @@ function App() {
     backgroundColor: 'ivory',
     zIndex: 999,
   }
+
+  //body - div - div - 2번div - table - tbody - tr - td
 
   if (loggedIn) {
     return (
@@ -553,6 +631,17 @@ function App() {
             <p><input type="date" id="change2" name="text" onChange={change2} /><input type="time" id="change4" name="text" onChange={change5} /></p>
             <p><input type="date" id="change3" name="text" onChange={change3} /><input type="time" id="change5" name="text" onChange={change6} /></p>
             <p><input id="time_check_insert" type="checkbox" onChange={time_check_insert} /></p>
+            <p>
+              <input id="time_repeat" type="checkbox" onChange={time_repeat} />
+              <select id="repeat">
+                <option>매일</option>
+                <option>매주</option>
+                <option>매월</option>
+                <option>매년</option>
+                <option>주중 매일(월-금)</option>
+                <option>맞춤</option>
+              </select>
+            </p>
           </div>
 
           <div id='mainEvents' style={insertStyle}>
@@ -569,8 +658,20 @@ function App() {
             <p><input type="date" id="change7" name="text" onChange={change2} /><input type="time" id="change9" name="text" onChange={change5} /></p>
             <p><input type="date" id="change8" name="text" onChange={change3} /><input type="time" id="change10" name="text" onChange={change6} /></p>
             <p><input id="time_check_update" type="checkbox" onChange={time_check} /></p>
+            <p>
+              <input id="time_repeat2" type="checkbox" onChange={time_repeat2} />
+              <select id="repeat2" onChange={repeat_change}>
+                <option>매일</option>
+                <option>일주일</option>
+                <option>매월</option>
+                <option>매년</option>
+                <option>주중 매일(월-금)</option>
+                <option>맞춤</option>
+              </select>
+            </p>
           </div>
 
+          <button onClick={list}>시간표</button>
           <div id='wrap'>
             <div id='external-events'>
               <div id='external-events-list'></div>

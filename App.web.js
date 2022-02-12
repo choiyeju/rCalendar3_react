@@ -1,5 +1,5 @@
 import React, { Component, useEffect, useState } from 'react'
-import { getMonth } from './src_react/util';
+
 import CalendarHeader from './src_react/components/CalendarHeader';
 import Sidebar from './src_react/components/Sidebar';
 import Month from './src_react/components/Month';
@@ -53,6 +53,8 @@ var _eventId = ''
 var _tstart = ''
 var _tend = ''
 var _repeat = ''
+var _repeat_option = ''
+var _repeat_how = ''
 
 function App() {
   // console.table(getMonth(3))
@@ -242,6 +244,12 @@ function App() {
     else
       _repeat = e.target.value
   }
+  function repeat_change_how(e, repeat_how) {
+    if ('' === e)
+      _repeat_how = repeat_how
+    else
+      _repeat_how = e.target.value
+  }
 
   function makeTomorrow(end) {
     const year = parseInt(end[0])*1000 + parseInt(end[1])*100 + parseInt(end[2])*10 + parseInt(end[3])
@@ -275,6 +283,9 @@ function App() {
     else
       yesterday += "-" + y.getDate()
     return yesterday
+  }
+  function makeRepeat() {
+
   }
 
   /**
@@ -426,16 +437,17 @@ function App() {
         }
       }
     }
-    var request = gapi.client.calendar.events.insert({
-        'calendarId': 'primary',
-        'resource': event,
-    })
-    request.execute(function(event) {
-    })
-    loadCalendarApi()
-    $('#insertEvents').hide()
+    // var request = gapi.client.calendar.events.insert({
+    //     'calendarId': 'primary',
+    //     'resource': event,
+    // })
+    // request.execute(function(event) {
+    // })
+    // loadCalendarApi()
+    // $('#insertEvents').hide()
   }
   function updateEventsF(title, start, end, eventId, tstart, tend) {
+    console.log("update")
     var test = document.getElementById('time_repeat2').checked
     if (test === true) {
       alert('이 일정 및 향후 일정, 모든 일정')
@@ -513,8 +525,10 @@ function App() {
     // })
     // loadCalendarApi()
     // $('#updateEvents').hide()
+    // offRepeat()
   }
   function deleteEventsF(eventId) {
+    console.log(eventId)
     var request = gapi.client.calendar.events.delete({
       'calendarId': 'primary',
       'eventId': eventId,
@@ -523,6 +537,7 @@ function App() {
     })
     loadCalendarApi()
     $('#updateEvents').hide()
+    offRepeat()
   }
 
   function onDisplay() {
@@ -546,6 +561,10 @@ function App() {
   function offDisplayU() {
     $('#updateEvents').hide()
   }
+  function offRepeat() {
+    $('#updateEvents_repeat').hide()
+    $('#deleteEvents_repeat').hide()
+  }
 
   function insertDisplay() {
     if ( _tstart == '')
@@ -560,7 +579,37 @@ function App() {
       updateEventsF(_title, _start, _end, _eventId, _tstart, _tend)
   }
   function deleteDisplay() {
+    _repeat_how = $("input[name=repeat2]:checked").val()
+    if (_repeat_how === "모든 일정") {
+      _eventId = _eventId.split('_')[0]
+    } else if (_repeat_how === "이 일정" && _eventId.split('_')[1] != undefined) {
+      _eventId = _eventId.split('_')[0]+"_"+_eventId.split('_')[1]
+    } else { //나중에 수정하세요
+      _eventId = _eventId.split('_')[0]
+    }
     deleteEventsF(_eventId)
+  }
+
+  function repeat() {
+    var test = document.getElementById('time_repeat2').checked
+    if (test === true) {
+      _repeat_option = $("select[id=repeat2] option:selected").text()
+      console.log(_repeat_option)
+    } else {
+      offRepeat()
+      updateDisplay()
+    }
+  }
+  function repeat2() {
+    var test = document.getElementById('time_repeat2').checked
+    if (test === true) {
+      $("#deleteEvents_repeat").show()
+      _repeat_option = $("select[id=repeat2] option:selected").text()
+      console.log(_repeat_option)
+    } else {
+      offRepeat()
+      deleteDisplay()
+    }
   }
 
   function Display(title, start, end, tstart, tend) {
@@ -615,11 +664,23 @@ function App() {
     width: 400,
     height: 500,
     backgroundColor: 'ivory',
+    zIndex: 998,
+  }
+  const insertStyle_repeat = {
+    padding: 10,
+    display: 'none',
+    position: 'absolute',
+    width: 400,
+    height: 500,
+    backgroundColor: 'ivory',
     zIndex: 999,
   }
 
   //body - div - div - 2번div - table - tbody - tr - td
 
+  // function a(){
+  // document.getElementById('login').click()
+  // }
   if (loggedIn) {
     return (
       <div className='App'>
@@ -633,13 +694,13 @@ function App() {
             <p><input id="time_check_insert" type="checkbox" onChange={time_check_insert} /></p>
             <p>
               <input id="time_repeat" type="checkbox" onChange={time_repeat} />
-              <select id="repeat">
-                <option>매일</option>
-                <option>매주</option>
-                <option>매월</option>
-                <option>매년</option>
-                <option>주중 매일(월-금)</option>
-                <option>맞춤</option>
+              <select id="repeat" onChange={repeat_change}>
+                <option value="매일">매일</option>
+                <option value="매주">매주</option>
+                <option value="매월">매월</option>
+                <option value="매년">매년</option>
+                <option value="주중_매일(월-금)">주중 매일(월-금)</option>
+                <option value="맞춤">맞춤</option>
               </select>
             </p>
           </div>
@@ -650,10 +711,25 @@ function App() {
             <div id='eventsCenter'></div>
           </div>
 
+          <div id="updateEvents_repeat" style={insertStyle_repeat}>
+            <button onClick={offRepeat}>x</button>
+            <button onClick={updateDisplay}>o</button>
+            <p><input type="radio" name="repeat" />이 일정</p>
+            <p><input type="radio" name="repeat" />이 일정 및 향후 일정</p>
+            <p><input type="radio" name="repeat" />모든 일정</p>
+          </div>
+          <div id="deleteEvents_repeat" style={insertStyle_repeat}>
+            <button onClick={offRepeat}>x</button>
+            <button onClick={deleteDisplay}>o</button>
+            <p><input type="radio" name="repeat2" value="이 일정" checked="checked" />이 일정</p>
+            <p><input type="radio" name="repeat2" value="이 일정 및 향후 일정" />이 일정 및 향후 일정</p>
+            <p><input type="radio" name="repeat2" value="모든 일정" />모든 일정</p>
+          </div>
+
           <div id='updateEvents' style={insertStyle}>
             <button onClick={offDisplayU}>x</button>
-            <button onClick={updateDisplay}>o</button>
-            <button onClick={deleteDisplay}>delete</button>
+            <button onClick={repeat}>o</button>
+            <button onClick={repeat2}>delete</button>
             <p><input id="change6" name="text" onChange={change} /></p>
             <p><input type="date" id="change7" name="text" onChange={change2} /><input type="time" id="change9" name="text" onChange={change5} /></p>
             <p><input type="date" id="change8" name="text" onChange={change3} /><input type="time" id="change10" name="text" onChange={change6} /></p>
@@ -661,15 +737,30 @@ function App() {
             <p>
               <input id="time_repeat2" type="checkbox" onChange={time_repeat2} />
               <select id="repeat2" onChange={repeat_change}>
-                <option>매일</option>
-                <option>일주일</option>
-                <option>매월</option>
-                <option>매년</option>
-                <option>주중 매일(월-금)</option>
-                <option>맞춤</option>
+                <option value="매일">매일</option>
+                <option value="매주">매주</option>
+                <option value="매월">매월</option>
+                <option value="매년">매년</option>
+                <option value="주중_매일(월-금)">주중 매일(월-금)</option>
+                <option value="맞춤">맞춤</option>
               </select>
             </p>
           </div>
+          {/* <div id='updateEvents_repeat' style={insertStyle}>
+            <button onClick={offDisplayU}>x</button>
+            <button onClick={deleteDisplay}>o</button>
+            <p><input id="change6" name="text" onChange={change} /></p>
+            <p><input type="date" id="change7" name="text" onChange={change2} /><input type="time" id="change9" name="text" onChange={change5} /></p>
+            <p><input type="date" id="change8" name="text" onChange={change3} /><input type="time" id="change10" name="text" onChange={change6} /></p>
+            <p><input id="time_check_update" type="checkbox" onChange={time_check} /></p>
+            <p>
+              <input id="time_repeat2" type="checkbox" onChange={time_repeat2} />
+              <select id="repeat2" onChange={repeat_change}>
+                <option value="이일정">매일</option>
+                <option value="모든일정">매주</option>
+              </select>
+            </p>
+          </div> */}
 
           <button onClick={list}>시간표</button>
           <div id='wrap'>
@@ -688,7 +779,7 @@ function App() {
   return (
     <div className='App'>
       <div id="authorize-div">
-        <button id="authorize-button" onClick={() => handleAuthClick(event)}>Login</button>
+        {handleAuthClick(event)}
       </div>
     </div>
   );

@@ -387,6 +387,22 @@ function App() {
         }
     }
 
+    var repeat =''
+    _repeat_option = $("select[id=repeat] option:selected").text()
+    if (_repeat_option === '매일'){
+      repeat = 'RRULE:FREQ=DAILY;COUNT=1095'
+    } else if (_repeat_option === '매주') {
+      repeat = 'RRULE:FREQ=WEEKLY;COUNT=156'
+    } else if (_repeat_option === '매월') {
+      repeat = 'RRULE:FREQ=MONTHLY;COUNT=40'
+    } else if (_repeat_option === '매년') {
+      repeat = 'RRULE:FREQ=YEARLY;COUNT=4'
+    } else if (_repeat_option === '주중 매일(월-금)') {
+      repeat = 'RRULE:FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR;COUNT=807'
+    } else {
+
+    }
+
     var event = null;
     if (tstart != '' && document.getElementById('time_check_update').checked === true) {
       start = start + 'T' + tstart + ':00+09:00'
@@ -403,9 +419,9 @@ function App() {
           'dateTime': end,
           'timeZone': 'Asia/Dili'
         },
-        // 'recurrence': [
-        //   'RRULE:FREQ=DAILY;COUNT=1'
-        // ],
+        'recurrence': [
+          repeat
+        ],
         'reminders': {
           'useDefault': false,
           'overrides': [
@@ -425,9 +441,9 @@ function App() {
         'end': {
           'date': end,
         },
-        // 'recurrence': [
-        //   'RRULE:FREQ=DAILY;COUNT=1'
-        // ],
+        'recurrence': [
+          repeat
+        ],
         'reminders': {
           'useDefault': false,
           'overrides': [
@@ -437,14 +453,14 @@ function App() {
         }
       }
     }
-    // var request = gapi.client.calendar.events.insert({
-    //     'calendarId': 'primary',
-    //     'resource': event,
-    // })
-    // request.execute(function(event) {
-    // })
-    // loadCalendarApi()
-    // $('#insertEvents').hide()
+    var request = gapi.client.calendar.events.insert({
+        'calendarId': 'primary',
+        'resource': event,
+    })
+    request.execute(function(event) {
+    })
+    loadCalendarApi()
+    $('#insertEvents').hide()
   }
   function updateEventsF(title, start, end, eventId, tstart, tend) {
     console.log("update")
@@ -528,7 +544,6 @@ function App() {
     // offRepeat()
   }
   function deleteEventsF(eventId) {
-    console.log(eventId)
     var request = gapi.client.calendar.events.delete({
       'calendarId': 'primary',
       'eventId': eventId,
@@ -594,18 +609,17 @@ function App() {
     var test = document.getElementById('time_repeat2').checked
     if (test === true) {
       _repeat_option = $("select[id=repeat2] option:selected").text()
-      console.log(_repeat_option)
     } else {
       offRepeat()
       updateDisplay()
     }
   }
   function repeat2() {
+    $("input:radio[name='repeat2']:radio[value='이 일정']").prop('checked', true);
     var test = document.getElementById('time_repeat2').checked
     if (test === true) {
       $("#deleteEvents_repeat").show()
       _repeat_option = $("select[id=repeat2] option:selected").text()
-      console.log(_repeat_option)
     } else {
       offRepeat()
       deleteDisplay()
@@ -678,9 +692,6 @@ function App() {
 
   //body - div - div - 2번div - table - tbody - tr - td
 
-  // function a(){
-  // document.getElementById('login').click()
-  // }
   if (loggedIn) {
     return (
       <div className='App'>
@@ -714,14 +725,14 @@ function App() {
           <div id="updateEvents_repeat" style={insertStyle_repeat}>
             <button onClick={offRepeat}>x</button>
             <button onClick={updateDisplay}>o</button>
-            <p><input type="radio" name="repeat" />이 일정</p>
-            <p><input type="radio" name="repeat" />이 일정 및 향후 일정</p>
-            <p><input type="radio" name="repeat" />모든 일정</p>
+            <p><input id="test1" type="radio" name="repeat2" value="이 일정"/>이 일정</p>
+            <p><input type="radio" name="repeat2" value="이 일정 및 향후 일정" />이 일정 및 향후 일정</p>
+            <p><input type="radio" name="repeat2" value="모든 일정" />모든 일정</p>
           </div>
           <div id="deleteEvents_repeat" style={insertStyle_repeat}>
             <button onClick={offRepeat}>x</button>
             <button onClick={deleteDisplay}>o</button>
-            <p><input type="radio" name="repeat2" value="이 일정" checked="checked" />이 일정</p>
+            <p><input id="test1" type="radio" name="repeat2" value="이 일정"/>이 일정</p>
             <p><input type="radio" name="repeat2" value="이 일정 및 향후 일정" />이 일정 및 향후 일정</p>
             <p><input type="radio" name="repeat2" value="모든 일정" />모든 일정</p>
           </div>

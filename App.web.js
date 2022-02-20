@@ -53,6 +53,7 @@ var _end = ''
 var _eventId = ''
 var _tstart = ''
 var _tend = ''
+var _location = undefined; var _description = undefined;
 var _repeat = ''
 var _repeat_option = ''
 var t = ''; var l = ''; var d = '';
@@ -181,8 +182,8 @@ function App() {
 
       const element = document.getElementById('eventsCenter')
       var location = ''; var description = '';
-      if (event.event._def.extendedProps.location != undefined) location = event.event._def.extendedProps.location
-      if (event.event._def.extendedProps.description != undefined) description = event.event._def.extendedProps.description
+      if (event.event._def.extendedProps.location != undefined) { location = event.event._def.extendedProps.location; _location = location; }
+      if (event.event._def.extendedProps.description != undefined) { description = event.event._def.extendedProps.description; _description = description; }
 
       if (event.event._def.publicId.split('_').length === 2) {
         var requestRecurringEvent = gapi.client.calendar.events.get({
@@ -527,7 +528,7 @@ function App() {
     console.log(repeat)
 
     var event = null;
-    if (tstart != '' && document.getElementById('time_check_update').checked === true) {
+    if (tstart != '' && document.getElementById('time_check_insert').checked === true) {
       start = start + 'T' + tstart + ':00+09:00'
       end = end + 'T' + tend + ':00+09:00'
       event = {
@@ -601,7 +602,18 @@ function App() {
       }
     }
 
-    var week = ''
+    var week = new Array('SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA');
+    var today = new Date($('#change7').val()).getDay();
+    var day = week[today];
+    var month = ''
+    if ($("select[id=repeat_update] option:selected").val() === 'MONTHLY') {
+      $("#"+ day+"2").val(day).prop("checked",true);
+      if ($("select[id=repeat_update2] option:selected").val() === 'same_week') {
+        month = new Date($('#change7').val());
+        month = Math.ceil(month.getDate() / 7)
+      }
+    }
+    var week = '' + month
     if (document.getElementById('MO2').checked) week += 'MO,'
     if (document.getElementById('TU2').checked) week += 'TU,'
     if (document.getElementById('WE2').checked) week += 'WE,'
@@ -625,13 +637,6 @@ function App() {
     if (week != '') {
       repeat2 += ';BYDAY='+ week
     }
-    var month = ''
-    if ($("select[id=repeat_update] option:selected").val() === 'MONTHLY') {
-      if ($("select[id=repeat_update2] option:selected").val() === 'same_week') {
-        console.log('same_week')
-        // repeat += ''+month
-      }
-    }
     
     _repeat_option = $("select[id=repeat3] option:selected").text()
     
@@ -648,23 +653,6 @@ function App() {
         repeat2 = 'RRULE:FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR'
       }
     } else repeat2 = null
-
-    console.log(repeat2)
-    var eventId2 = ''
-    if ($("input[name=repeat5]:checked").val() === "이 일정") { //반복 바뀐 경우
-      console.log("1")
-      eventId2 = eventId
-      repeat2 = null
-    } else if ($("input[name=repeat5]:checked").val() === "이 일정 및 향후 일정") {
-      console.log("2")
-      eventId2 = eventId.split('_')[0]
-      //반복할 때 위쪽에 있으면 종료일 알아서 찾기
-      // insertDisplay()
-    }
-    else {
-      console.log("3")
-      eventId2 = eventId.split('_')[0]
-    }
 
     var event = null;
     if (tstart != '' && document.getElementById('time_check_update').checked === true) {
@@ -716,17 +704,242 @@ function App() {
         }
       }
     }
-    
-    // var request = gapi.client.calendar.events.update({
-    //   'calendarId': 'primary',
-    //   'eventId': eventId2,
-    //   'resource': event
-    // });
-    // request.execute(function(event) {
-    // })
-    // loadCalendarApi()
-    // $('#updateEvents').hide()
-    // offRepeat()
+
+    var requestRecurringEvent = gapi.client.calendar.events.get({
+      'calendarId': 'primary',
+      'eventId': _eventId.split('_')[0]
+    });
+    requestRecurringEvent.execute(function(resp) {
+      var eventId2 =''
+      if ($("input[name=repeat5]:checked").val() === "이 일정") { //반복 바뀐 경우
+        eventId2 = eventId
+        repeat2 = null
+
+        var request = gapi.client.calendar.events.update({
+          'calendarId': 'primary',
+          'eventId': eventId2,
+          'resource': event
+        });
+        request.execute(function(event) {
+        })
+        loadCalendarApi()
+      } else if ($("input[name=repeat5]:checked").val() === "이 일정 및 향후 일정") {
+        eventId2 = eventId.split('_')[0]
+        var request = gapi.client.calendar.events.insert({
+          'calendarId': 'primary',
+          'resource': event,
+        })
+        request.execute(function(event) {
+        })
+
+        recurrence = (resp.recurrence)[0];
+        console.log(resp)
+        var u = true
+        var fday = makeYesterday($('#change7').val())
+        fday = fday.split("")[0] + fday.split("")[1] + fday.split("")[2] + fday.split("")[3] + fday.split("")[5] + fday.split("")[6] + fday.split("")[8] + fday.split("")[9];
+        var re = recurrence.split(';'); var re2 = []
+        recurrence = ''
+        for (var i = 0; i < re.length; i++) re2[i] = re[i].split('=');
+        for (var i = 0; i < re2.length; i++) {
+          if (re2[i][0] === 'UNTIL') {
+            u = false
+            re2[i][1] = fday + 'T000000Z;';
+          }
+          recurrence += re2[i][0] + "=" + re2[i][1] + ";"
+        }
+        if (u) recurrence += "UNTIL" + "=" + fday + "T000000Z;"
+
+        if (tstart != '' && document.getElementById('time_check_update').checked === true) {
+          event = {
+            'summary': resp.summary,
+            'location': _location, 
+            'description': _description,
+            'start': {
+              'dateTime': resp.start.dateTime,
+              'timeZone': 'Asia/Dili'
+            },
+            'end': {
+              'dateTime': resp.end.dateTime,
+              'timeZone': 'Asia/Dili'
+            },
+            'recurrence': [
+              recurrence
+            ],
+            'reminders': {
+              'useDefault': false,
+              'overrides': [
+                {'method': 'email', 'minutes': 24 * 60},
+                {'method': 'popup', 'minutes': 10}
+              ]
+            }
+          }
+        } else {
+          event = {
+            'summary': resp.summary,
+            'location': _location, 
+            'description': _description,
+            'start': {
+              'date': resp.start.date,
+            },
+            'end': {
+              'date': resp.end.date,
+            },
+            'recurrence': [
+              recurrence
+            ],
+            'reminders': {
+              'useDefault': false,
+              'overrides': [
+                {'method': 'email', 'minutes': 24 * 60},
+                {'method': 'popup', 'minutes': 10}
+              ]
+            }
+          }
+        }
+        var request = gapi.client.calendar.events.update({
+          'calendarId': 'primary',
+          'eventId': eventId2,
+          'resource': event
+        });
+        request.execute(function(event) {
+        })
+        loadCalendarApi()
+      }
+      else if ($("input[name=repeat5]:checked").val() === "모든 일정") {
+        eventId2 = eventId.split('_')[0]
+        if (tstart != '' && document.getElementById('time_check_update').checked === true) {
+          event = {
+            'summary': resp.summary,
+            'location': _location, 
+            'description': _description,
+            'start': {
+              'dateTime': resp.start.dateTime,
+              'timeZone': 'Asia/Dili'
+            },
+            'end': {
+              'dateTime': resp.end.dateTime,
+              'timeZone': 'Asia/Dili'
+            },
+            'recurrence': [
+              repeat2
+            ],
+            'reminders': {
+              'useDefault': false,
+              'overrides': [
+                {'method': 'email', 'minutes': 24 * 60},
+                {'method': 'popup', 'minutes': 10}
+              ]
+            }
+          }
+        } else {
+          event = {
+            'summary': resp.summary,
+            'location': _location, 
+            'description': _description,
+            'start': {
+              'date': resp.start.date,
+            },
+            'end': {
+              'date': resp.end.date,
+            },
+            'recurrence': [
+              repeat2
+            ],
+            'reminders': {
+              'useDefault': false,
+              'overrides': [
+                {'method': 'email', 'minutes': 24 * 60},
+                {'method': 'popup', 'minutes': 10}
+              ]
+            }
+          }
+        }
+        var request = gapi.client.calendar.events.update({
+          'calendarId': 'primary',
+          'eventId': eventId2,
+          'resource': event
+        });
+        request.execute(function(event) {
+        })
+        loadCalendarApi()
+      } else {
+        eventId2 = eventId.split('_')[0]
+        recurrence = (resp.recurrence)[0];
+        console.log(resp)
+        var u = true
+        var fday = makeYesterday($('#change7').val())
+        fday = fday.split("")[0] + fday.split("")[1] + fday.split("")[2] + fday.split("")[3] + fday.split("")[5] + fday.split("")[6] + fday.split("")[8] + fday.split("")[9];
+        var re = recurrence.split(';'); var re2 = []
+        recurrence = ''
+        for (var i = 0; i < re.length; i++) re2[i] = re[i].split('=');
+        for (var i = 0; i < re2.length; i++) {
+          if (re2[i][0] === 'UNTIL') {
+            u = false
+            re2[i][1] = fday + 'T000000Z;';
+          }
+          recurrence += re2[i][0] + "=" + re2[i][1] + ";"
+        }
+        if (u) recurrence += "UNTIL" + "=" + fday + "T000000Z;"
+
+        if (tstart != '' && document.getElementById('time_check_update').checked === true) {
+          event = {
+            'summary': resp.summary,
+            'location': _location, 
+            'description': _description,
+            'start': {
+              'dateTime': resp.start.dateTime,
+              'timeZone': 'Asia/Dili'
+            },
+            'end': {
+              'dateTime': resp.end.dateTime,
+              'timeZone': 'Asia/Dili'
+            },
+            'recurrence': [
+              recurrence
+            ],
+            'reminders': {
+              'useDefault': false,
+              'overrides': [
+                {'method': 'email', 'minutes': 24 * 60},
+                {'method': 'popup', 'minutes': 10}
+              ]
+            }
+          }
+        } else {
+          event = {
+            'summary': resp.summary,
+            'location': _location, 
+            'description': _description,
+            'start': {
+              'date': resp.start.date,
+            },
+            'end': {
+              'date': resp.end.date,
+            },
+            'recurrence': [
+              recurrence
+            ],
+            'reminders': {
+              'useDefault': false,
+              'overrides': [
+                {'method': 'email', 'minutes': 24 * 60},
+                {'method': 'popup', 'minutes': 10}
+              ]
+            }
+          }
+        }
+        var request = gapi.client.calendar.events.update({
+          'calendarId': 'primary',
+          'eventId': eventId2,
+          'resource': event
+        });
+        request.execute(function(event) {
+        })
+        loadCalendarApi()
+      }
+    });
+    $('#updateEvents').hide()
+    offRepeat()
   }
   function deleteEventsF(eventId) {
     var request = gapi.client.calendar.events.delete({
@@ -788,6 +1001,8 @@ function App() {
       _eventId = _eventId.split('_')[0]+"_"+_eventId.split('_')[1]
     } else { //나중에 수정하세요
       _eventId = _eventId.split('_')[0]
+      $("input[name=repeat2]:checked").removeAttr('checked');
+      updateDisplay([])
     }
     deleteEventsF(_eventId)
   }
@@ -825,7 +1040,21 @@ function App() {
     }
   }
   function repeat1() {
-    var week = ''
+    // $("#repeat_update2").val("same_day").prop('selected', true);
+    var week = new Array('SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA');
+    var today = new Date($('#change7').val()).getDay();
+    var day = week[today];
+    
+    var month = ''
+    if ($("select[id=repeat_update] option:selected").val() === 'MONTHLY') {
+      $("#"+ day+"2").val(day).prop("checked",true);
+      if ($("select[id=repeat_update2] option:selected").val() === 'same_week') {
+        month = new Date($('#change7').val());
+        month = Math.ceil(month.getDate() / 7)
+      }
+    }
+    
+    var week = '' + month
     if (document.getElementById('SU2').checked) week += 'SU,'
     if (document.getElementById('SA2').checked) week += 'SA,'
     if (document.getElementById('FR2').checked) week += 'FR,'
@@ -835,26 +1064,19 @@ function App() {
     if (document.getElementById('MO2').checked) week += 'MO,'
     week = week.slice(0, -1)
     var enddate = ''
-    if ($("input[name=repeat4]:checked").val() === '날짜')
-      enddate = $("#update_date").val().split('-')[0] + $("#update_date").val().split('-')[1] + $("#update_date").val().split('-')[2] + 'T000000Z'
-
+    if ($("input[name=repeat4]:checked").val() === '날짜') 
+      enddate = $("#update_date").val().split('-')[0] + $("#update_date").val().split('-')[1] + $("#update_date").val().split('-')[2]
+    
     var repeat = null
     if ($("input[name=repeat4]:checked").val() === '없음') {
       repeat = 'RRULE:FREQ=' + $("select[id=repeat_update] option:selected").val() +';INTERVAL=' + $("input[id=number_update]").val()
-    } else if ($("input[name=repeat4]:checked").val() === '날짜'){
+    } else if ($("input[name=repeat4]:checked").val() === '날짜') {
       repeat = 'RRULE:FREQ=' + $("select[id=repeat_update] option:selected").val() +';INTERVAL=' + $("input[id=number_update]").val() + ';UNTIL=' + enddate
-    } else if ($("input[name=repeat4]:checked").val() === '다음'){
+    } else if ($("input[name=repeat4]:checked").val() === '다음') {
       repeat = 'RRULE:FREQ=' + $("select[id=repeat_update] option:selected").val() +';INTERVAL=' + $("input[id=number_update]").val() + ';COUNT=' + $("input[id='update_count']").val()
     }
     if (week != '') {
       repeat += ';BYDAY='+ week
-    }
-    var month = ''
-    if ($("select[id=repeat_update] option:selected").val() === 'MONTHLY') {
-      if ($("select[id=repeat_update2] option:selected").val() === 'same_week') {
-        console.log('same_week')
-        // repeat += ''+month
-      }
     }
     
     _repeat_option = $("select[id=repeat3] option:selected").text()
@@ -886,7 +1108,7 @@ function App() {
         var b = repeat.split(';'); var b2 = []
         for (var i = 0; i < a.length; i++) a2[i] = a[i].split('='); for (var i = 0; i < b.length; i++) b2[i] = b[i].split('=');
         if (a2[0][1] === b2[0][1]){
-          var a3 = ['1', '', '', '']; var b3 = ['', '', '', '']
+          var a3 = ['1', '', '', '']; var b3 = ['1', '', '', '']
           for (var i = 0; i < a2.length; i++) {
             if (a2[i][0] === 'INTERVAL') a3[0] = a2[i][1];
             else if (a2[i][0] === 'COUNT') a3[1] = a2[i][1];
@@ -922,7 +1144,6 @@ function App() {
         }
       });
     }
-
   }
   function repeat2() {
     var week = new Array('SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA');
@@ -935,7 +1156,7 @@ function App() {
     $("#FR2").val('FR').prop("checked",false);
     $("#SA2").val('SA').prop("checked",false);
     $("#SU2").val('SU').prop("checked",false);
-    $("#"+ day+"2").val(day).prop("checked",true);
+    // $("#"+ day+"2").val(day).prop("checked",true);
     $("#week8").hide();$("#week9").hide();$("#week10").hide();$("#week11").hide();$("#week12").hide();$("#week13").hide();$("#week14").hide();$("#week15").hide();
     $("#MO2").hide(); $("#TU2").hide(); $("#WE2").hide(); $("#TH2").hide(); $("#FR2").hide(); $("#SA2").hide(); $("#SU2").hide(); $('#repeat_update2').hide();
     //요일보이기
@@ -944,10 +1165,17 @@ function App() {
       $("#MO2").show();$("#TU2").show();$("#WE2").show();$("#TH2").show();$("#FR2").show();$("#SA2").show();$("#SU2").show();
     }
     if ($("select[id=repeat_update] option:selected").text() === '월') {
+      // $("#repeat_update2").val('same_day').prop("selected",true);
       $('#repeat_update2').show()
     }
 
-    var week = ''
+    var month = ''
+    if ($("select[id=repeat_update] option:selected").val() === 'MONTHLY') {
+      $("#"+ day+"2").val(day).prop("checked",true);
+      month = new Date($('#change7').val());
+      month = Math.ceil(month.getDate() / 7)
+    }
+    var week = '' + month
     if (document.getElementById('MO2').checked) week += 'MO,'
     if (document.getElementById('TU2').checked) week += 'TU,'
     if (document.getElementById('WE2').checked) week += 'WE,'
@@ -970,13 +1198,6 @@ function App() {
     }
     if (week != '') {
       repeat += ';BYDAY='+ week
-    }
-    var month = ''
-    if ($("select[id=repeat_update] option:selected").val() === 'MONTHLY') {
-      if ($("select[id=repeat_update2] option:selected").val() === 'same_week') {
-        console.log('same_week')
-        // repeat += ''+month
-      }
     }
     
     _repeat_option = $("select[id=repeat3] option:selected").text()
@@ -1011,7 +1232,9 @@ function App() {
           if (re2[i][0] === 'BYDAY') {
             var w = re2[i][1].split(',')
             for (var j = 0; j < w.length; j++) {
-              if (w[j] === 'MO')
+              if (parseInt(w[j].split("")[0]) === month)
+                $("#repeat_update2").val('same_week').prop("selected",true);
+              else if (w[j] === 'MO')
                 $("#MO2").val('MO').prop("checked",true);
               else if (w[j] === 'TO')
                 $("#TU2").val('TU').prop("checked",true);

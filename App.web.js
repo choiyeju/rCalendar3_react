@@ -71,6 +71,7 @@ function App() {
   // var SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
   var SCOPES = "https://www.googleapis.com/auth/calendar.events"
 
+  //달력 생성하기
   function changeCalendar(change_events) {
     console.log(change_events)
     var containerEl = $('#external-events-list')[0];
@@ -100,40 +101,43 @@ function App() {
     },
     events: change_events,
     dateClick:function(event) {
-      $("#repeat_insert").val("DAILY").prop('selected', true);
-      $("#repeat_insert2").val("same_day").prop('selected', true);
-      $('#location').val('')
-      $('#description').val('')
 
       onDisplay()
-      change('', '')
-      change2('', event.dateStr)
-      change3('', event.dateStr)
-      change5('', '')
-      change6('', '')
+      title('', '')
+      startDate('', event.dateStr)
+      endDate('', event.dateStr)
+      startTime('', '')
+      endTime('', '')
       repeat_change('', '')
 
-      $('#change').val('')
-      $('#change2').val(event.dateStr)
-      $('#change3').val(event.dateStr)
-      $('#change4').val(_tstart)
-      $('#change5').val(_tend)
+      //제목, 시작, 끝, 지역, 내용
+      $('#insertEvents_title').val('')
+      $('#insertEvents_startDate').val(event.dateStr)
+      $('#insertEvents_endDate').val(event.dateStr)
+      $('#insertEvents_startTime').val(_tstart)
+      $('#insertEvents_endTime').val(_tend)
+      $('#insertEvents_location').val('')
+      $('#insertEvents_description').val('')
 
-      $("input:radio[name='repeat2']:radio[value='없음']").prop('checked', true);
-      $("#number_insert").val(1);
-      $("#insert_date").val(makeYear($('#change2').val()));
-      $("#insert_count").val(1);
+      //맞춤
+      $("#insertEvents_repeatNumber").val(1); $("#insertEvents_repeatDWMY").val("DAILY").prop('selected', true);
       
-      $("#repeat").val('매일').prop("selected",true);
-      document.getElementById('time_check_insert').checked = false
-      document.getElementById('time_repeat').checked = false
-      $("#repeat").hide()
-      $("#change4").hide()
-      $("#change5").hide()
+      $("#insertEvents_repeatM").val("same_day").prop('selected', true);
+      $("input:radio[name='insertEvents_repeatLast']:radio[value='없음']").prop('checked', true);
+      $("#insertEvents_repeatLastDate").val(makeYear($('#insertEvents_startDate').val()));
+      $("#insertEvents_repeatLastCount").val(1);
+      
+      //시간, 반복
+      $("#insertEvents_repeatDate").val('매일').prop("selected",true);
+      document.getElementById('insertEvents_timeCheck').checked = false
+      document.getElementById('insertEvents_repeatCheck').checked = false
+      $("#insertEvents_repeatDate").hide()
+      $("#insertEvents_startTime").hide()
+      $("#insertEvents_endTime").hide()
     },
     eventClick:function(event) {
       $("#repeat_update").val("DAILY").prop('selected', true);
-      $("#repeat_update2").val("same_day").prop('selected', true);
+      $("#repeat_update2").val("insertEvents_repeatM1").prop('selected', true);
       $('#location2').val('')
       $('#description2').val('')
       $("#repeat3").val('매일').prop("selected",true);
@@ -156,12 +160,12 @@ function App() {
       var cend = ''
       var tstart = ''
       var tend = ''
-      change('', event.event._def.title)
-      change2('', mainStart)
-      change3('', mainEnd)
-      change4(event.event._def.publicId)
-      change5('', '')
-      change6('', '')
+      title('', event.event._def.title)
+      startDate('', mainStart)
+      endDate('', mainEnd)
+      eventId(event.event._def.publicId)
+      startTime('', '')
+      endTime('', '')
       repeat_change('', '')
       last_title = event.event._def.title
 
@@ -173,10 +177,10 @@ function App() {
         cend = mainEnd.substring(0, 10)
         tstart = mainStart.substring(11, 16)
         tend = mainEnd.substring(11, 16)
-        change2('', cstart)
-        change3('', cend)
-        change5('', tstart)
-        change6('', tend)
+        startDate('', cstart)
+        endDate('', cend)
+        startTime('', tstart)
+        endTime('', tend)
         repeat_change('', '매주') //매일, 매주, 매월, 매년
       }
 
@@ -278,42 +282,34 @@ function App() {
     calendar.render();
   }
 
-  const LoginOut = () => {
-    gapi.auth.signOut(
-      console.log('logout'),
-      setLoggedIn(false),
-    )
-    changeCalendar([])
-  }
-
-  function change(e, title) {
+  function title(e, title) {
     if ('' === e)
       _title = title
     else
       _title = e.target.value
   }
-  function change2(e, start) {
+  function startDate(e, start) {
     if ('' === e)
       _start = start
     else
       _start = e.target.value
   }
-  function change3(e, end) {
+  function endDate(e, end) {
     if ('' === e)
       _end = end
     else
       _end = e.target.value
   }
-  function change4(eventId) {
+  function eventId(eventId) {
     _eventId = eventId
   }
-  function change5(e, tstart) {
+  function startTime(e, tstart) {
     if ('' === e)
       _tstart = tstart
     else
       _tstart = e.target.value
   }
-  function change6(e, tend) {
+  function endTime(e, tend) {
     if ('' === e)
       _tend = tend
     else
@@ -326,6 +322,9 @@ function App() {
       _repeat = e.target.value
   }
 
+
+
+  //시간 조정하기
   function makeTomorrow(end) {
     const year = parseInt(end[0])*1000 + parseInt(end[1])*100 + parseInt(end[2])*10 + parseInt(end[3])
     const month = parseInt(end[5])*10 + parseInt(end[6])
@@ -376,6 +375,17 @@ function App() {
     return myear
   }
 
+
+
+  //로그아웃
+  const LoginOut = () => {
+    gapi.auth.signOut(
+      console.log('logout'),
+      setLoggedIn(false),
+    )
+    changeCalendar([])
+  }
+  //로그인
   /**
    * Print the summary and start datetime/date of the next ten events in
    * the authorized user's calendar. If no events are found an
@@ -465,6 +475,9 @@ function App() {
     return false;
   }
 
+
+
+  //추가
   function InsertEventsF(title, start, end, tstart, tend) {
     if (start === end){
       if (tstart[0]+tstart[1] > tend[0]+tend[1]){
@@ -479,40 +492,47 @@ function App() {
     }
 
     var week = ''
-    if (document.getElementById('MO').checked) week += 'MO,'
-    if (document.getElementById('TU').checked) week += 'TU,'
-    if (document.getElementById('WE').checked) week += 'WE,'
-    if (document.getElementById('TH').checked) week += 'TH,'
-    if (document.getElementById('FR').checked) week += 'FR,'
-    if (document.getElementById('SA').checked) week += 'SA,'
-    if (document.getElementById('SU').checked) week += 'SU,'
-    week = week.slice(0, -1)
+    if ($("select[id=insertEvents_repeatDWMY] option:selected").val() === 'MONTHLY') {
+      if ($("select[id=insertEvents_repeatM] option:selected").val() === 'same_week') {
+        var week_all = new Array('SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA');
+        var today = new Date($('#insertEvents_startDate').val()).getDay();
+        var day = week_all[today];
+        console.log(day)
+        var date = new Date($('#insertEvents_startDate').val());
+        console.log(Math.ceil(date.getDate() / 7))
+        week += Math.ceil(date.getDate() / 7) + day
+      }
+    }
+    if ($("select[id=insertEvents_repeatDWMY] option:selected").val() === 'WEEKLY') {
+      if (document.getElementById('SU').checked) week += 'SU,'
+      if (document.getElementById('SA').checked) week += 'SA,'
+      if (document.getElementById('FR').checked) week += 'FR,'
+      if (document.getElementById('TH').checked) week += 'TH,'
+      if (document.getElementById('WE').checked) week += 'WE,'
+      if (document.getElementById('TU').checked) week += 'TU,'
+      if (document.getElementById('MO').checked) week += 'MO,'
+      week = week.slice(0, -1)
+    }
+
     var enddate = ''
-    if ($("input[name=repeat2]:checked").val() === '날짜')
-      enddate = $("#insert_date").val().split('-')[0] + $("#insert_date").val().split('-')[1] + $("#insert_date").val().split('-')[2] + 'T000000Z'
+    if ($("input[name=insertEvents_repeatLast]:checked").val() === '날짜')
+      enddate = $("#insertEvents_repeatLastDate").val().split('-')[0] + $("#insertEvents_repeatLastDate").val().split('-')[1] + $("#insertEvents_repeatLastDate").val().split('-')[2] + 'T000000Z'
 
     var repeat = null
-    if ($("input[name=repeat2]:checked").val() === '없음') {
-      repeat = 'RRULE:FREQ=' + $("select[id=repeat_insert] option:selected").val() +';INTERVAL=' + $("input[id=number_insert]").val() + ';'
-    } else if ($("input[name=repeat2]:checked").val() === '날짜'){
-      repeat = 'RRULE:FREQ=' + $("select[id=repeat_insert] option:selected").val() +';INTERVAL=' + $("input[id=number_insert]").val() + ';UNTIL=' + enddate + ';'
-    } else if ($("input[name=repeat2]:checked").val() === '다음'){
-      repeat = 'RRULE:FREQ=' + $("select[id=repeat_insert] option:selected").val() +';INTERVAL=' + $("input[id=number_insert]").val() + ';COUNT=' + $("input[id='insert_count']").val() + ';'
+    if ($("input[name=insertEvents_repeatLast]:checked").val() === '없음') {
+      repeat = 'RRULE:FREQ=' + $("select[id=insertEvents_repeatDWMY] option:selected").val() +';INTERVAL=' + $("input[id=insertEvents_repeatNumber]").val() + ';'
+    } else if ($("input[name=insertEvents_repeatLast]:checked").val() === '날짜'){
+      repeat = 'RRULE:FREQ=' + $("select[id=insertEvents_repeatDWMY] option:selected").val() +';INTERVAL=' + $("input[id=insertEvents_repeatNumber]").val() + ';UNTIL=' + enddate + ';'
+    } else if ($("input[name=insertEvents_repeatLast]:checked").val() === '다음'){
+      repeat = 'RRULE:FREQ=' + $("select[id=insertEvents_repeatDWMY] option:selected").val() +';INTERVAL=' + $("input[id=insertEvents_repeatNumber]").val() + ';COUNT=' + $("input[id='insertEvents_repeatLastCount']").val() + ';'
     }
     if (week != '') {
       repeat += 'BYDAY='+ week +';'
     }
-    var month = ''
-    if ($("select[id=repeat_insert] option:selected").val() === 'MONTHLY') {
-      if ($("select[id=repeat_insert2] option:selected").val() === 'same_week') {
-        console.log('same_week')
-        // repeat += ''+month
-      }
-    }
     
-    _repeat_option = $("select[id=repeat] option:selected").text()
+    _repeat_option = $("select[id=insertEvents_repeatDate] option:selected").text()
     
-    if (document.getElementById('time_repeat').checked) {
+    if (document.getElementById('insertEvents_repeatCheck').checked) {
       if (_repeat_option === '매일'){
         repeat = 'RRULE:FREQ=DAILY;'
       } else if (_repeat_option === '매주') {
@@ -528,13 +548,13 @@ function App() {
     console.log(repeat)
 
     var event = null;
-    if (tstart != '' && document.getElementById('time_check_insert').checked === true) {
+    if (tstart != '' && document.getElementById('insertEvents_timeCheck').checked === true) {
       start = start + 'T' + tstart + ':00+09:00'
       end = end + 'T' + tend + ':00+09:00'
       event = {
         'summary': title,
-        'location': $('#location').val(),
-        'description': $('#description').val(),
+        'location': $('#insertEvents_location').val(),
+        'description': $('#insertEvents_description').val(),
         'start': {
           'dateTime': start,
           'timeZone': 'Asia/Dili'
@@ -557,8 +577,8 @@ function App() {
     } else {
       event = {
         'summary': title,
-        'location': $('#location').val(),
-        'description': $('#description').val(),
+        'location': $('#insertEvents_location').val(),
+        'description': $('#insertEvents_description').val(),
         'start': {
           'date': start,
         },
@@ -587,6 +607,7 @@ function App() {
     $('#insertEvents').hide()
     offRepeat()
   }
+  //업데이트
   function updateEventsF(title, start, end, eventId, tstart, tend, repeat) {
     console.log('update')
     if (start === end){
@@ -941,6 +962,7 @@ function App() {
     $('#updateEvents').hide()
     offRepeat()
   }
+  //삭제
   function deleteEventsF(eventId) {
     var request = gapi.client.calendar.events.delete({
       'calendarId': 'primary',
@@ -952,67 +974,129 @@ function App() {
     $('#updateEvents').hide()
     offRepeat()
   }
+  function makeEvent(title, start, end, location, description, recurrence) {
+    if (start.length > 10) {
+      return {
+        'summary': title,
+        'location': location, 
+        'description': description,
+        'start': {
+          'dateTime': start,
+          'timeZone': 'Asia/Dili'
+        },
+        'end': {
+          'dateTime': end,
+          'timeZone': 'Asia/Dili'
+        },
+        'recurrence': [
+          recurrence
+        ],
+        'reminders': {
+          'useDefault': false,
+          'overrides': [
+            {'method': 'email', 'minutes': 24 * 60},
+            {'method': 'popup', 'minutes': 10}
+          ]
+        }
+      }
+    } else {
+      return {
+        'summary': title,
+        'location': location, 
+        'description': description,
+        'start': {
+          'date': start,
+        },
+        'end': {
+          'date': end,
+        },
+        'recurrence': [
+          recurrence
+        ],
+        'reminders': {
+          'useDefault': false,
+          'overrides': [
+            {'method': 'email', 'minutes': 24 * 60},
+            {'method': 'popup', 'minutes': 10}
+          ]
+        }
+      }
+    }
+  }
+  function makeUNTIL(recurrence) {
+    var u = true
+    var fday = makeYesterday($('#change7').val())
+    fday = fday.split("")[0] + fday.split("")[1] + fday.split("")[2] + fday.split("")[3] + fday.split("")[5] + fday.split("")[6] + fday.split("")[8] + fday.split("")[9];
+    var re = recurrence.split(';'); var re2 = []
+    recurrence = ''
+    for (var i = 0; i < re.length; i++) re2[i] = re[i].split('=');
+    for (var i = 0; i < re2.length; i++) {
+      if (re2[i][0] === 'UNTIL') {
+        u = false
+        re2[i][1] = fday + 'T000000Z';
+      }
+      recurrence += re2[i][0] + "=" + re2[i][1] + ";"
+    }
+    if (u) recurrence += "UNTIL" + "=" + fday + "T000000Z;"
+    return recurrence;
+  }
 
-  function onDisplay() {
-    $('#insertEvents').show()
-  }
-  function offDisplay() {
-    $('#insertEvents').hide()
-  }
 
-  function onDisplayM() {
-    $('#mainEvents').show()
-  }
-  function offDisplayM() {
-    $('#mainEvents').hide()
-  }
 
-  function onDisplayU() {
-    $('#mainEvents').hide()
-    $('#updateEvents').show()
-  }
-  function offDisplayU() {
-    $('#updateEvents').hide()
-  }
-  function offRepeat() {
-    $('#insertEvents_repeat').hide()
-    $('#updateEvents_repeat').hide()
-    $('#updateEvents_repeat2').hide()
-    $('#deleteEvents_repeat').hide()
-  }
-
+  //창추가
   function insertDisplay() {
     if ( _tstart == '')
       InsertEventsF(_title, _start, makeTomorrow(_end), _tstart, _tend)
     else 
       InsertEventsF(_title, _start, _end, _tstart, _tend)
   }
+  //창업데이트
   function updateDisplay(repeat) {
-    if ( _tstart == '')
-      updateEventsF(_title, _start, _end, _eventId, _tstart, _tend, repeat)
-    else 
       updateEventsF(_title, _start, _end, _eventId, _tstart, _tend, repeat)
   }
+  //창삭제
   function deleteDisplay() {
-    _repeat_how = $("input[name=repeat2]:checked").val()
+    _repeat_how = $("input[name=deleteEvents_repeatRepeat]:checked").val()
     if (_repeat_how === "모든 일정") {
       _eventId = _eventId.split('_')[0]
     } else if (_repeat_how === "이 일정" && _eventId.split('_')[1] != undefined) {
       _eventId = _eventId.split('_')[0]+"_"+_eventId.split('_')[1]
-    } else { //나중에 수정하세요
+    } else if (_repeat_how === "이 일정 및 향후 일정" && _eventId.split('_')[1] != undefined) { //나중에 수정하세요
+      /* 이 일정 및 향후 일정 삭제 = 수정해야함 */
+      $("input[name=repeat4]:checked").removeAttr('checked');
+      var requestRecurringEvent = gapi.client.calendar.events.get({
+        'calendarId': 'primary',
+        'eventId': _eventId.split('_')[0],
+      });
+      requestRecurringEvent.execute(function(resp) {
+
+        var event = ''
+        if (resp.start.date != undefined)
+          event = makeEvent(resp.summary, resp.start.date, resp.end.date, resp.location, resp.description, makeUNTIL(resp.recurrence[0]))
+        else
+          event = makeEvent(resp.summary, resp.start.dateTime, resp.end.dateTime, resp.location, resp.description, makeUNTIL(resp.recurrence[0]))
+
+        var request = gapi.client.calendar.events.update({
+          'calendarId': 'primary',
+          'eventId': _eventId.split('_')[0],
+          'resource': event,
+        });
+        request.execute(function(event) {
+        })
+      });
+
+    } else {
       _eventId = _eventId.split('_')[0]
-      $("input[name=repeat2]:checked").removeAttr('checked');
-      updateDisplay([])
     }
     deleteEventsF(_eventId)
   }
 
-  function repeat() {
-    //요일체크
+  function insertEvents_repeatF() {
+    //주:요일체크
     var week = new Array('SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA');
-    var today = new Date($('#change2').val()).getDay();
+    var today = new Date($('#insertEvents_startDate').val()).getDay();
     var day = week[today];
-    $("#week").hide();$("#week1").hide();$("#week2").hide();$("#week3").hide();$("#week4").hide();$("#week5").hide();$("#week6").hide();$("#week7").hide();
+    $("#insertEvents_repeatW").hide();$("#insertEvents_repeatW1").hide();$("#insertEvents_repeatW2").hide();$("#insertEvents_repeatW3").hide();$("#insertEvents_repeatW4").hide();$("#insertEvents_repeatW5").hide();$("#insertEvents_repeatW6").hide();$("#insertEvents_repeatW7").hide();
     $("#MO").val('MO').prop("checked",false); $("#MO").hide();
     $("#TU").val('TU').prop("checked",false); $("#TU").hide();
     $("#WE").val('WE').prop("checked",false); $("#WE").hide();
@@ -1020,21 +1104,22 @@ function App() {
     $("#FR").val('FR').prop("checked",false); $("#FR").hide();
     $("#SA").val('SA').prop("checked",false); $("#SA").hide();
     $("#SU").val('SU').prop("checked",false); $("#SU").hide();
-    $('#repeat_insert2').hide();
-    //요일보이기
-    if ($("select[id=repeat_insert] option:selected").text() === '주') {
-      $("#week").show();$("#week1").show();$("#week2").show();$("#week3").show();$("#week4").show();$("#week5").show();$("#week6").show();$("#week7").show();
+    $('#insertEvents_repeatM').hide();
+    //W보이기
+    if ($("select[id=insertEvents_repeatDWMY] option:selected").text() === '주') {
+      $("#insertEvents_repeatW").show();$("#insertEvents_repeatW1").show();$("#insertEvents_repeatW2").show();$("#insertEvents_repeatW3").show();$("#insertEvents_repeatW4").show();$("#insertEvents_repeatW5").show();$("#insertEvents_repeatW6").show();$("#insertEvents_repeatW7").show();
       $("#MO").show();$("#TU").show();$("#WE").show();$("#TH").show();$("#FR").show();$("#SA").show();$("#SU").show();
       $("#"+ day).val(day).prop("checked",true);
     }
-    if ($("select[id=repeat_insert] option:selected").text() === '월') {
-      $('#repeat_insert2').show()
+    //M보이기
+    if ($("select[id=insertEvents_repeatDWMY] option:selected").text() === '월') {
+      $('#insertEvents_repeatM').show()
     }
 
-    if ($("select[id=repeat] option:selected").text() === '맞춤') {
+    if ($("select[id=insertEvents_repeatDate] option:selected").text() === '맞춤') {
       $("#insertEvents_repeat").show()
     } else {
-      $("input[name=repeat2]:checked").removeAttr('checked');
+      $("input[name=insertEvents_repeatLast]:checked").removeAttr('checked');
       offRepeat()
       insertDisplay()
     }
@@ -1290,18 +1375,19 @@ function App() {
     }
     
   }
-  function repeat3() {
-    $("input:radio[name='repeat2']:radio[value='이 일정']").prop('checked', true);
+  function deleteEvents_repeatF() {
+    $("input:radio[name='deleteEvents_repeatRepeat']:radio[value='이 일정']").prop('checked', true);
     var test = document.getElementById('time_repeat2').checked
     if (test === true) {
       $("#deleteEvents_repeat").show()
-      _repeat_option = $("select[id=repeat2] option:selected").text()
+      // _repeat_option = $("select[id=repeat2] option:selected").text()
     } else {
       offRepeat()
       deleteDisplay()
     }
   }
 
+  //메인창 추가
   function Display(title, start, end, tstart, tend, location, description, recurrence) {
     var d = '<p>제목 | ' + title + '</p><p>'; var dd = '<p>'
     var a = ['', '', '', '', '']
@@ -1355,6 +1441,52 @@ function App() {
 
     return d
   }
+  //창
+  function onDisplay() {
+    $('#insertEvents').show()
+  }
+  function offDisplay() {
+    $('#insertEvents').hide()
+  }
+
+  function onDisplayM() {
+    $('#mainEvents').show()
+  }
+  function offDisplayM() {
+    $('#mainEvents').hide()
+  }
+
+  function onDisplayU() {
+    $('#mainEvents').hide()
+    $('#updateEvents').show()
+  }
+  function offDisplayU() {
+    $('#updateEvents').hide()
+  }
+  function offRepeat() {
+    $('#insertEvents_repeat').hide()
+    $('#updateEvents_repeat').hide()
+    $('#updateEvents_repeat2').hide()
+    $('#deleteEvents_repeat').hide()
+  }
+
+  function insertEvents_timeCheck() {
+    var test = document.getElementById('insertEvents_timeCheck').checked
+    if (test === false) {
+      $('#insertEvents_startTime').hide()
+      $('#insertEvents_endTime').hide()
+    } else {
+      $('#insertEvents_startTime').show()
+      $('#insertEvents_endTime').show()
+    }
+  }
+  function insertEvents_repeatCheck() {
+    var test = document.getElementById('insertEvents_repeatCheck').checked
+    if (test === false) 
+      $('#insertEvents_repeatDate').hide()
+    else 
+      $('#insertEvents_repeatDate').show()
+  }
 
   function time_check() {
     var test = document.getElementById('time_check_update').checked
@@ -1365,24 +1497,6 @@ function App() {
       $('#change9').show()
       $('#change10').show()
     }
-  }
-  function time_check_insert() {
-    var test = document.getElementById('time_check_insert').checked
-    if (test === false) {
-      $('#change4').hide()
-      $('#change5').hide()
-    } else {
-      $('#change4').show()
-      $('#change5').show()
-    }
-  }
-
-  function time_repeat() {
-    var test = document.getElementById('time_repeat').checked
-    if (test === false) 
-      $('#repeat').hide()
-    else 
-      $('#repeat').show()
   }
   function time_repeat2() {
     var test = document.getElementById('time_repeat2').checked
@@ -1428,48 +1542,50 @@ function App() {
     return (
       <div className='App'>
         <header className='App-header'>
+          {/* insertEvents_repeat */}
           <div id="insertEvents_repeat" style={insertStyle_repeat}>
             <button onClick={offRepeat}>x</button>
             <button onClick={insertDisplay}>o</button>
-            <p>반복 주기<input id="number_insert" type="number" min="1" />
-              <select id="repeat_insert" onClick={repeat}>
+            <p>반복 주기<input id="insertEvents_repeatNumber" type="number" min="1" />
+              <select id="insertEvents_repeatDWMY" onClick={insertEvents_repeatF}>
                 <option value="DAILY">일</option>
                 <option value="WEEKLY">주</option>
                 <option value="MONTHLY">월</option>
                 <option value="YEARLY">년</option>
               </select>
             </p>
+            <p id="insertEvents_repeatW">반복 요일</p>
             <p>
-              <select id="repeat_insert2">
-                <option id="same_day" value="same_day">같은 날짜</option>
-                <option id="same_week" value="same_week">같은 주</option>
+              <input id="MO" type="checkbox" value="MO"/><span id="insertEvents_repeatW1">월</span>
+              <input id="TU" type="checkbox" value="TU"/><span id="insertEvents_repeatW2">화</span>
+              <input id="WE" type="checkbox" value="WE"/><span id="insertEvents_repeatW3">수</span>
+              <input id="TH" type="checkbox" value="TH"/><span id="insertEvents_repeatW4">목</span>
+              <input id="FR" type="checkbox" value="FR"/><span id="insertEvents_repeatW5">금</span>
+              <input id="SA" type="checkbox" value="SA"/><span id="insertEvents_repeatW6">토</span>
+              <input id="SU" type="checkbox" value="SU"/><span id="insertEvents_repeatW7">일</span>
+            </p>
+            <p>
+              <select id="insertEvents_repeatM">
+                <option id="insertEvents_repeatM1" value="same_day">같은 날짜</option>
+                <option id="insertEvents_repeatM2" value="same_week">같은 주</option>
               </select>
             </p>
-            <p id="week">반복 요일</p>
-            <p>
-              <input id="MO" type="checkbox" value="MO"/><span id="week1">월</span>
-              <input id="TU" type="checkbox" value="TU"/><span id="week2">화</span>
-              <input id="WE" type="checkbox" value="WE"/><span id="week3">수</span>
-              <input id="TH" type="checkbox" value="TH"/><span id="week4">목</span>
-              <input id="FR" type="checkbox" value="FR"/><span id="week5">금</span>
-              <input id="SA" type="checkbox" value="SA"/><span id="week6">토</span>
-              <input id="SU" type="checkbox" value="SU"/><span id="week7">일</span>
-            </p>
             <p>종료</p>
-            <p><input id="test1" type="radio" name="repeat2" value="없음"/>없음</p>
-            <p><input type="radio" name="repeat2" value="날짜" />날짜<input id="insert_date" type="date"/></p>
-            <p><input type="radio" name="repeat2" value="다음" />다음<input id="insert_count" type="number" min="1"/></p>
+            <p><input id="insertEvents_repeatLast1" type="radio" name="insertEvents_repeatLast" value="없음"/>없음</p>
+            <p><input id="insertEvents_repeatLast2" type="radio" name="insertEvents_repeatLast" value="날짜" />날짜<input id="insertEvents_repeatLastDate" type="date"/></p>
+            <p><input id="insertEvents_repeatLast3" type="radio" name="insertEvents_repeatLast" value="다음" />다음<input id="insertEvents_repeatLastCount" type="number" min="1"/></p>
           </div>
+          {/* insertEvents */}
           <div id='insertEvents' style={insertStyle}>
             <button onClick={offDisplay}>x</button>
-            <button onClick={repeat}>o</button>
-            <p><input id="change" name="text" placeholder='(제목 및 시간 추가)' onChange={change} /></p>
-            <p><input type="date" id="change2" name="text" onChange={change2} /><input type="time" id="change4" name="text" onChange={change5} /></p>
-            <p><input type="date" id="change3" name="text" onChange={change3} /><input type="time" id="change5" name="text" onChange={change6} /></p>
-            <p><input id="time_check_insert" type="checkbox" onChange={time_check_insert} /></p>
+            <button onClick={insertEvents_repeatF}>o</button>
+            <p><input id="insertEvents_title" name="text" placeholder='(제목 및 시간 추가)' onChange={title} /></p>
+            <p><input type="date" id="insertEvents_startDate" name="text" onChange={startDate} /><input type="time" id="insertEvents_startTime" name="text" onChange={startTime} /></p>
+            <p><input type="date" id="insertEvents_endDate" name="text" onChange={endDate} /><input type="time" id="insertEvents_endTime" name="text" onChange={endTime} /></p>
+            <p><input id="insertEvents_timeCheck" type="checkbox" onChange={insertEvents_timeCheck} /></p>
             <p>
-              <input id="time_repeat" type="checkbox" onChange={time_repeat} />
-              <select id="repeat">
+              <input id="insertEvents_repeatCheck" type="checkbox" onChange={insertEvents_repeatCheck} />
+              <select id="insertEvents_repeatDate">
                 <option value="매일">매일</option>
                 <option value="매주">매주</option>
                 <option value="매월">매월</option>
@@ -1478,9 +1594,11 @@ function App() {
                 <option value="맞춤">맞춤</option>
               </select>
             </p>
-            <p><input id="location" type="text" placeholder='위치 추가'/></p>
-            <p><input id="description" type="text" placeholder='내용 추가'/></p>
+            <p><input id="insertEvents_location" type="text" placeholder='위치 추가'/></p>
+            <p><input id="insertEvents_description" type="text" placeholder='내용 추가'/></p>
           </div>
+
+
 
           <div id='mainEvents' style={insertStyle}>
             <button onClick={offDisplayM}>x</button>
@@ -1488,6 +1606,7 @@ function App() {
             <div id='eventsCenter'></div>
           </div>
 
+          {/* updateEvents_repeat */}
           <div id="updateEvents_repeat" style={insertStyle_repeat2}>
             <button onClick={offRepeat}>x</button>
             <button onClick={updateDisplay}>o</button>
@@ -1495,14 +1614,16 @@ function App() {
             <p><input type="radio" name="repeat5" value="이 일정 및 향후 일정" />이 일정 및 향후 일정</p>
             <p><input type="radio" name="repeat5" value="모든 일정" />모든 일정</p>
           </div>
+          {/* deleteEvents_repeat */}
           <div id="deleteEvents_repeat" style={insertStyle_repeat}>
             <button onClick={offRepeat}>x</button>
             <button onClick={deleteDisplay}>o</button>
-            <p><input id="test1" type="radio" name="repeat2" value="이 일정"/>이 일정</p>
-            <p><input type="radio" name="repeat2" value="이 일정 및 향후 일정" />이 일정 및 향후 일정</p>
-            <p><input type="radio" name="repeat2" value="모든 일정" />모든 일정</p>
+            <p><input id="test1" type="radio" name="deleteEvents_repeatRepeat" value="이 일정"/>이 일정</p>
+            <p><input type="radio" name="deleteEvents_repeatRepeat" value="이 일정 및 향후 일정" />이 일정 및 향후 일정</p>
+            <p><input type="radio" name="deleteEvents_repeatRepeat" value="모든 일정" />모든 일정</p>
           </div>
 
+          {/* updateEvents_repeat2 */}
           <div id="updateEvents_repeat2" style={insertStyle_repeat}>
             <button onClick={offRepeat}>x</button>
             <button onClick={repeat1}>o</button>
@@ -1535,13 +1656,14 @@ function App() {
             <p><input id="t2" type="radio" name="repeat4" value="날짜" />날짜<input id="update_date" type="date"/></p>
             <p><input id="t3" type="radio" name="repeat4" value="다음" />다음<input id="update_count" type="number" min="1"/></p>
           </div>
+          {/* updateEvents */}
           <div id='updateEvents' style={insertStyle}>
             <button onClick={offDisplayU}>x</button>
             <button onClick={repeat2}>o</button>
-            <button onClick={repeat3}>delete</button>
-            <p><input id="change6" name="text" onChange={change} /></p>
-            <p><input type="date" id="change7" name="text" onChange={change2} /><input type="time" id="change9" name="text" onChange={change5} /></p>
-            <p><input type="date" id="change8" name="text" onChange={change3} /><input type="time" id="change10" name="text" onChange={change6} /></p>
+            <button onClick={deleteEvents_repeatF}>delete</button>
+            <p><input id="change6" name="text" onChange={title} /></p>
+            <p><input type="date" id="change7" name="text" onChange={startDate} /><input type="time" id="change9" name="text" onChange={startTime} /></p>
+            <p><input type="date" id="change8" name="text" onChange={endDate} /><input type="time" id="change10" name="text" onChange={endTime} /></p>
             <p><input id="time_check_update" type="checkbox" onChange={time_check} /></p>
             <p>
               <input id="time_repeat2" type="checkbox" onChange={time_repeat2} />
@@ -1558,22 +1680,8 @@ function App() {
             <p><input id="location2" type="text" placeholder='위치 추가'/></p>
             <p><input id="description2" type="text" placeholder='내용 추가'/></p>
           </div>
-          {/* <div id='updateEvents_repeat' style={insertStyle}>
-            <button onClick={offDisplayU}>x</button>
-            <button onClick={deleteDisplay}>o</button>
-            <p><input id="change6" name="text" onChange={change} /></p>
-            <p><input type="date" id="change7" name="text" onChange={change2} /><input type="time" id="change9" name="text" onChange={change5} /></p>
-            <p><input type="date" id="change8" name="text" onChange={change3} /><input type="time" id="change10" name="text" onChange={change6} /></p>
-            <p><input id="time_check_update" type="checkbox" onChange={time_check} /></p>
-            <p>
-              <input id="time_repeat2" type="checkbox" onChange={time_repeat2} />
-              <select id="repeat2" onChange={repeat_change}>
-                <option value="이일정">매일</option>
-                <option value="모든일정">매주</option>
-              </select>
-            </p>
-          </div> */}
 
+          {/* list */}
           <button onClick={list}>시간표</button>
           <div id='wrap'>
             <div id='external-events'>
@@ -1583,6 +1691,7 @@ function App() {
               <div id='calendar1'></div>
             </div>
           </div>
+
           <button onClick={LoginOut}>logout</button>
         </header>
       </div>
@@ -1598,16 +1707,3 @@ function App() {
 }
 
 export default App;
-
-// import React from 'react'
-// import {View, Text} from 'react-native';
-
-// function App() {
-//   return (
-//     <View>
-//       <Text>Hello world from react</Text>
-//     </View>
-//   )
-// }
-
-// export default App

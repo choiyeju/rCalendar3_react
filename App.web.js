@@ -39,7 +39,6 @@ function App() {
 
   //달력 생성하기
   function changeCalendar(change_events) {
-    console.log(change_events)
     var containerEl = $('#external-events-list')[0];
     calendar = new FullCalendar.Draggable(containerEl, {
     itemSelector: '.fc-event',
@@ -102,10 +101,9 @@ function App() {
       $("#insertEvents_endTime").hide()
     },
     eventClick:function(event) {
-      console.log(event)
       _r = false; update_what = 0; update_repeat = null; update_recurrence = null; update_recurrence = ['', '', '', '', ''];
       var mainStart = event.event.startStr; var mainEnd = event.event.endStr;
-      _lastTitle = event.event._def.title; _lastStart = mainStart; _lastEnd = mainEnd;
+      // _lastTitle = event.event._def.title; _lastStart = mainStart; _lastEnd = mainEnd;
       var cstart = ''; var cend = ''; var tstart = ''; var tend = '';
 
       if (mainStart !== mainEnd && mainEnd.length < 11){
@@ -205,6 +203,8 @@ function App() {
             $("#updateEvents_repeatDate").val('매일').prop("selected",true);
           else if (re2[0][1] === 'WEEKLY')
             $("#updateEvents_repeatDate").val('매주').prop("selected",true);
+          else if (re2[0][1] === 'MONTHLY')
+            $("#updateEvents_repeatDate").val('매월').prop("selected",true);
           else if (re2[0][1] === 'YEARLY')
             $("#updateEvents_repeatDate").val('매년').prop("selected",true);
           
@@ -291,6 +291,7 @@ function App() {
     else
       _end = e.target.value
   }
+
   function eventId(eventId) {
     _eventId = eventId
   }
@@ -526,7 +527,7 @@ function App() {
       }
       recurrence += re2[i][0] + "=" + re2[i][1] + ";"
     }
-    if (u) recurrence += "UNTIL" + "=" + fday + "T000000Z;"
+    if (u) recurrence += "UNTIL" + "=" + fday + "T000000Z"
     return recurrence;
   }
   function timeCorrect(start, end, tstart, tend) {
@@ -547,8 +548,8 @@ function App() {
 
   //추가
   function InsertEventsF(title, start, end, tstart, tend) {
-    if (timeCorrect(start, end, tstart, tend)) return;
-
+    if (timeCorrect(start, end, tstart, tend) && tstart != '' && tend != '') return;
+    
     var week = ''
     if ($("select[id=insertEvents_repeatDWMY] option:selected").val() === 'MONTHLY') {
       if ($("select[id=insertEvents_repeatM] option:selected").val() === 'same_week') {
@@ -624,16 +625,17 @@ function App() {
   }
   //업데이트
   function updateEventsF(title, start, end, eventId, tstart, tend, event) {
-    if (timeCorrect(start, end, tstart, tend)) return;
+    if (timeCorrect(start, end, tstart, tend) && tstart != '' && tend != '') return;
+    // makeEvent(title, start, end, location, description, recurrence) //location => _location, $('#updateEvents_location').val()
     
-    // var request = gapi.client.calendar.events.update({
-    //   'calendarId': 'primary',
-    //   'eventId': eventId2,
-    //   'resource': makeEvent(title, start, end, location, description, recurrence) //location => _location, $('#updateEvents_location').val()
-    // });
-    // request.execute(function(event) {
-    // })
-    // loadCalendarApi()
+    var request = gapi.client.calendar.events.update({
+      'calendarId': 'primary',
+      'eventId': eventId,
+      'resource': event
+    });
+    request.execute(function(event) {
+    })
+    loadCalendarApi()
     $('#updateEvents').hide()
     offRepeat()
   }
@@ -658,25 +660,39 @@ function App() {
       InsertEventsF(_title, _start, _end, _tstart, _tend)
   }
   //창업데이트
-  function updateDisplay(repeat) {
+  function updateDisplay() {
+    console.log('updateDisplay')
     var event = ''
     _repeat_how = $("input[name=updateEvents_repeat2Repeat]:checked").val()
-    if (_repeat_how === "모든 일정") {
-      _eventId = _eventId.split('_')[0]
-      event = makeEvent(_title, _start, _end, $('#updateEvents_location').val(), $('#updateEvents_description').val(), update_repeat) //location => _location, $('#updateEvents_location').val()
-    } else if (_repeat_how === "이 일정" && _eventId.split('_')[1] != undefined) {
-      _eventId = _eventId.split('_')[0]+"_"+_eventId.split('_')[1]
-      event = makeEvent(_title, _start, _end, $('#updateEvents_location').val(), $('#updateEvents_description').val(), makeUNTIL(update_repeat))
-    } else if (_repeat_how === "이 일정 및 향후 일정" && _eventId.split('_')[1] != undefined) { //나중에 수정하세요
-      //업데이트
-      _eventId = _eventId.split('_')[0];
-      event = makeEvent(_lastTitle, _lastStart, _lastEnd, _location, _description, update_repeat); //_start, _end 모두 과거로 가져오기
-      //추가
-    } else {
-      _eventId = _eventId.split('_')[0];
-      event = makeEvent(_title, _start, _end, $('#updateEvents_location').val(), $('#updateEvents_description').val(), update_repeat);
-    }
-    updateEventsF(_title, _start, _end, _eventId, _tstart, _tend, event)
+
+    var requestRecurringEvent = gapi.client.calendar.events.get({
+      'calendarId': 'primary',
+      'eventId': _eventId.split('_')[0]
+    });
+    requestRecurringEvent.execute(function(resp) {
+      if (_repeat_how === "모든 일정") {
+        _eventId = _eventId.split('_')[0]
+        event = makeEvent(_title, _start, _end, $('#updateEvents_location').val(), $('#updateEvents_description').val(), update_repeat) //location => _location, $('#updateEvents_location').val()
+      } else if (_repeat_how === "이 일정" && _eventId.split('_')[1] != undefined) {
+        event = makeEvent(_title, _start, _end, $('#updateEvents_location').val(), $('#updateEvents_description').val(), null)
+      } else if (_repeat_how === "이 일정 및 향후 일정" && _eventId.split('_')[1] != undefined) { //나중에 수정하세요
+        //업데이트
+        _eventId = _eventId.split('_')[0];
+        event = makeEvent(resp.summary, resp.start.date, resp.end.date, _location, _description, makeUNTIL(resp.recurrence[0])); //_start, _end 모두 과거로 가져오기
+        //추가
+        var request = gapi.client.calendar.events.insert({
+          'calendarId': 'primary',
+          'resource': makeEvent(_title, _start, _end, $('#updateEvents_location').val(), $('#updateEvents_description').val(), update_repeat),
+        })
+        request.execute(function(event) {
+        })
+        loadCalendarApi()
+      } else {
+        _eventId = _eventId.split('_')[0];
+        event = makeEvent(_title, _start, _end, $('#updateEvents_location').val(), $('#updateEvents_description').val(), update_repeat);
+      }
+      updateEventsF(_title, _start, _end, _eventId, _tstart, _tend, event)
+    });
   }
   //창삭제
   function deleteDisplay() {
@@ -743,8 +759,10 @@ function App() {
     }
 
     if ($("select[id=insertEvents_repeatDate] option:selected").text() === '맞춤') {
+      console.log('insert1')
       $("#insertEvents_repeat").show()
     } else {
+      console.log('insert2')
       $("input[name=insertEvents_repeatLast]:checked").removeAttr('checked');
       offRepeat()
       insertDisplay()
@@ -766,23 +784,23 @@ function App() {
     if (_r) {
       update_what = 1;
       if ($("select[id=updateEvents_repeatDate] option:selected").text() === '맞춤' && document.getElementById('updateEvents_repeatCheck').checked === true) {
-        console.log("1")
+        console.log("맞춤->맞춤")
         $('#updateEvents_repeat').show()
       } else {
-        console.log("2")
+        console.log("반복->맞춤")
         updateEvents_repeat2F()
       }
     } else {
       update_what = 2;
       if ($("select[id=updateEvents_repeatDate] option:selected").text() === '맞춤' && document.getElementById('updateEvents_repeatCheck').checked === true) {
-        console.log("3")
+        console.log("일반->맞춤")
         $('#updateEvents_repeat').show()
       }
       else {
-        console.log("4")
+        console.log("일반->일반,반복")
         $("input:radio[name='updateEvents_repeat2Repeat']:radio[value='모든 일정']").prop('checked', true);
         offRepeat()
-        updateDisplay([])
+        updateDisplay()
       }
     }    
   }
@@ -792,7 +810,7 @@ function App() {
       var today = new Date($('#updateEvents_startDate').val()).getDay();
       var day = week[today];
       var month = ''; var week = '';
-      if ($("select[id=updateEvents_repeatDWMY] option:selected").val() === 'WEEKLY' || $("select[id=updateEvents_repeatDWMY] option:selected").val() === 'MONTHLY') {
+      if ($("select[id=updateEvents_repeatDWMY] option:selected").val() === 'WEEKLY' || ($("select[id=updateEvents_repeatDWMY] option:selected").val() === 'MONTHLY' && $("select[id=updateEvents_repeatM] option:selected").val() === 'same_week')) {
         $("#"+ day+"2").val(day).prop("checked",true);
         if ($("select[id=updateEvents_repeatM] option:selected").val() === 'same_week') {
           month = new Date($('#updateEvents_startDate').val());
@@ -815,8 +833,9 @@ function App() {
         enddate = $("#updateEvents_repeatLastDate").val().split('-')[0] + $("#updateEvents_repeatLastDate").val().split('-')[1] + $("#updateEvents_repeatLastDate").val().split('-')[2] + 'T000000Z'
 
       var b = ['', '', '', '', ''];
-      if ($("select[id=updateEvents_repeatDate] option:selected").text() === '맞춤')
-        b[0] = $("select[id=updateEvents_repeatDWMY] option:selected").val();
+      if ($("select[id=updateEvents_repeatDate] option:selected").text() === '맞춤') {
+        b[0] = $("select[id=updateEvents_repeatDWMY] option:selected").val(); b[1] = '1';
+      }
       else if ($("select[id=updateEvents_repeatDate] option:selected").text() === '매일')
         b[0] = 'DAILY'
       else if ($("select[id=updateEvents_repeatDate] option:selected").text() === '매주')
@@ -826,7 +845,7 @@ function App() {
       if ($("select[id=updateEvents_repeatDate] option:selected").text() === '매년')
         b[0] = 'YEARLY'
       
-      b[1] = $("input[id=updateEvents_repeatNumber]").val();
+      if ($("input[id=updateEvents_repeatNumber]").val() != '1') b[1] = $("input[id=updateEvents_repeatNumber]").val();
       b[2] = week;
       if ($("input[name=updateEvents_repeatLast]:checked").val() === '없음') {
         update_repeat = 'RRULE:FREQ=' + $("select[id=updateEvents_repeatDWMY] option:selected").val() +';INTERVAL=' + $("input[id=updateEvents_repeatNumber]").val()
@@ -861,24 +880,29 @@ function App() {
       for (var i = 0; i < 5; i++)
         if (update_recurrence[i] != b[i]) update_recurrenceRepeat = true
       //갑자기 체크된다..?
+      console.log(update_recurrence)
+      console.log(b)
 
       if (update_recurrenceRepeat) {
+        console.log('이 일정 및 향후 일정')
         $("input:radio[name='updateEvents_repeat2Repeat']:radio[value='이 일정 및 향후 일정']").prop('checked', true);
         $('#test2').hide(); $('#test3').hide();
         $('#updateEvents_repeat2').show()
       } else if (_lastTitle != _title || _location != $('#updateEvents_location').val() || _description != $('#updateEvents_description').val()) {
+        console.log('이 일정')
         $("input:radio[name='updateEvents_repeat2Repeat']:radio[value='이 일정']").prop('checked', true);
         $('#updateEvents_repeat2').show()
       } else {
+        console.log('바뀐 것 없음')
         $("input:radio[name='updateEvents_repeat2Repeat']:radio[value='모든 일정']").prop('checked', true);
         offRepeat()
-        updateDisplay([])
+        updateDisplay()
       }
       
     } else {
       $("input:radio[name='updateEvents_repeat2Repeat']:radio[value='모든 일정']").prop('checked', true);
       offRepeat()
-      updateDisplay([])
+      updateDisplay()
     }
   }
   function deleteEvents_repeat2F() {
